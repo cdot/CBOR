@@ -1,16 +1,43 @@
 /* eslint-env node, mocha */
 
-import Encoder from "../js/Encoder.mjs";
-import Decoder from "../js/Decoder.mjs";
-import MemoryInStream from "../js/MemoryInStream.mjs";
-import MemoryOutStream from "../js/MemoryOutStream.mjs";
-import IDREFMixin from "../js/IDREFMixin.mjs";
-import TagHandler from "../js/TagHandler.mjs";
-import { assert } from "chai";
+if (typeof requirejs === "undefined") {
+  requirejs = require("requirejs");
+  requirejs.config({ baseUrl: `${__dirname}/..` });
+}
 
-describe("IDREF", () => {
+describe("ID-REF tag mixin", () => {
+
+  let assert,
+      Encoder,
+      Decoder,
+      MemoryInStream,
+      MemoryOutStream,
+      IDREFMixin,
+      TagHandler;
 
   function UNit() {}
+
+  before(required => {
+    requirejs([
+      "chai",
+      "js/Encoder",
+      "js/Decoder",
+      "js/MemoryInStream",
+      "js/MemoryOutStream",
+      "js/IDREFMixin",
+      "js/TagHandler" ], (
+        chai, E, D, I, O, Mix, Th
+      ) => {
+        assert = chai.assert;
+        MemoryInStream = I,
+        MemoryOutStream = O;
+        Encoder = E;
+        Decoder = D;
+        IDREFMixin = Mix;
+        TagHandler = Th;
+        required();
+      });
+  });
 
   it("simple-object", () => {
 

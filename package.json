@@ -1,9 +1,8 @@
 {
-    "type": "module",
 	"name": "CBOR",
 	"version": "0.0.1",
-  "node": "17.0.1",
-  "description": "CBOR implementation using streams",
+	"node": "17.0.1",
+	"description": "CBOR implementation using streams",
 	"author": {
 		"name": "Crawford Currie",
 		"url": "https://github.com/cdot"
@@ -14,6 +13,7 @@
 	},
 	"license": "MIT",
 	"dependencies": {
+		"requirejs": "^2.3.6"
 	},
 	"devDependencies": {
 		"chai": ">=4.3.7",
@@ -23,26 +23,25 @@
 		"istanbul": "^0.4.5",
 		"jsdoc": "^4.0.0",
 		"marked": "^4.2.4",
-		"mocha": ">=10.1.0",
+		"mocha": ">=10.2.0",
 		"nyc": "^15.1.0",
 		"uglify-js": "^3.17.4"
 	},
 	"scripts": {
-		"doc": "jsdoc --verbose -r -d doc js",
-		"lint": "eslint 'js/*' -f unix",
-		"test": "mocha --recursive test",
+		"doc": "jsdoc --verbose -R README.md -c jsdoc_config.json -r -d doc js -t node_modules/docdash",
+		"lint": "eslint js -f unix",
+		"test": "mocha --recursive --extension ut --timeout=5000",
 		"coverage": "nyc --hook-run-in-context --hook-run-in-this-context --reporter=html --reporter text npm run test",
 		"update": "ncu -u "
 	},
-  "eslintConfig": {
+	"eslintConfig": {
 		"extends": "eslint:recommended",
 		"parserOptions": {
-    "sourceType": "module",
+			"sourceType": "module",
 			"ecmaVersion": 13
 		},
 		"env": {
 			"shared-node-browser": true,
-			"jquery": true,
 			"es6": true
 		},
 		"globals": {
@@ -50,8 +49,7 @@
 			"define": "writable",
 			"requirejs": "writable",
 			"Mocha": "writable",
-			"WeakRef": "readonly",
-			"document": "readonly"
+			"WeakRef": "readonly"
 		},
 		"rules": {
 			"camelcase": 0,

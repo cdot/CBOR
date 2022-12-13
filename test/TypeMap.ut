@@ -1,16 +1,43 @@
 /* eslint-env node, mocha */
 
-import Encoder from "../js/Encoder.mjs";
-import Decoder from "../js/Decoder.mjs";
-import MemoryInStream from "../js/MemoryInStream.mjs";
-import MemoryOutStream from "../js/MemoryOutStream.mjs";
-import TypeMapMixin from "../js/TypeMapMixin.mjs";
-import TagHandler from "../js/TagHandler.mjs";
-import { assert } from "chai";
+if (typeof requirejs === "undefined") {
+  requirejs = require("requirejs");
+  requirejs.config({ baseUrl: `${__dirname}/..` });
+}
 
 describe("TypeMap", () => {
 
+  let assert,
+      Encoder,
+      Decoder,
+      MemoryInStream,
+      MemoryOutStream,
+      TypeMapMixin,
+      TagHandler;
+
   function UNit() {}
+
+  before(required => {
+    requirejs([
+      "chai",
+      "js/Encoder",
+      "js/Decoder",
+      "js/MemoryInStream",
+      "js/MemoryOutStream",
+      "js/TypeMapMixin",
+      "js/TagHandler" ], (
+        chai, E, D, I, O, Mix, Th
+      ) => {
+        assert = chai.assert;
+        MemoryInStream = I,
+        MemoryOutStream = O;
+        Encoder = E;
+        Decoder = D;
+        TypeMapMixin = Mix;
+        TagHandler = Th;
+        required();
+      });
+  });
 
   it("instance-ref", () => {
 

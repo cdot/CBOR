@@ -1,0 +1,121 @@
+/* eslint-env node, mocha */
+
+if (typeof requirejs === "undefined") {
+  requirejs = require("requirejs");
+  requirejs.config({ baseUrl:`${ __dirname}/..` });
+}
+
+describe("KeyDictionary", () => {
+
+  let assert,
+      Encoder,
+      Decoder,
+      MemoryInStream,
+      MemoryOutStream,
+      KeyDictionaryMixin,
+      TagHandler;
+
+  function UNit() {}
+
+  before(required => {
+    requirejs([
+      "chai",
+      "js/Encoder",
+      "js/Decoder",
+      "js/MemoryInStream",
+      "js/MemoryOutStream",
+      "js/KeyDictionaryMixin",
+      "js/TagHandler" ], (
+        chai, E, D, I, O, Mix, Th
+      ) => {
+        assert = chai.assert;
+        MemoryInStream = I,
+        MemoryOutStream = O;
+        Encoder = E;
+        Decoder = D;
+        KeyDictionaryMixin = Mix;
+        TagHandler = Th;
+        required();
+      });
+  });
+
+  const A = {
+    Aardvaark: "a", Budgerigar: "b", Crocodile: "c"
+  };
+
+  const ABC = {
+    Aardvaark: A,
+    Budgerigar: {
+      Aardvaark: "A", Budgerigar: "B", Crocodile: "C"
+    },
+    Crocodile: {
+      Aardvaark: "v",
+      Budgerigar: "r",
+      Crocodile:  [
+        { Aardvaark: A },
+        { Budgerigar: A },
+        { Crocodile: A }
+      ]
+    }
+    };
+
+  it("no key dictionary", () => {
+    const tagger = new (KeyDictionaryMixin(TagHandler))();
+
+    let outs = new MemoryOutStream();
+    const encoder = new Encoder(outs, tagger);
+    //encoder.debug = console.debug;
+    encoder.encode(ABC);
+    let frozen = outs.Uint8Array;
+
+    console.log("Unknown keys", frozen.length);
+
+    const decoder = new Decoder(new MemoryInStream(frozen), tagger);
+    //decoder.debug = console.debug;
+    let thawed = decoder.decode();
+
+    assert.deepEqual(thawed, ABC);
+  });
+
+  it("key dictionary, known keys, write", () => {
+    let tagger = new (KeyDictionaryMixin(TagHandler))({
+      keys: [ "Aardvaark", "Budgerigar", "Crocodile" ],
+      writeKeyDict: true
+    });
+
+    let outs = new MemoryOutStream();
+    const encoder = new Encoder(outs, tagger);
+    //encoder.debug = console.debug;
+    encoder.encode(ABC);
+    let frozen = outs.Uint8Array;
+
+    console.log("Known keys, write", frozen.length);
+
+    const decoder = new Decoder(new MemoryInStream(frozen), tagger);
+    //decoder.debug = console.debug;
+    let thawed = decoder.decode();
+
+    assert.deepEqual(thawed, ABC);
+  });
+
+  it("key dictionary, known keys, no write", () => {
+    const tagger = new (KeyDictionaryMixin(TagHandler))({
+      keys: [ "A", "B", "C" ],
+      writeKeyDict: false
+    });
+
+    const outs = new MemoryOutStream();
+    const encoder = new Encoder(outs, tagger);
+    //encoder.debug = console.debug;
+    encoder.encode(ABC);
+    const frozen = outs.Uint8Array;
+
+    console.log("Known keys, no write", frozen.length);
+
+    const decoder = new Decoder(new MemoryInStream(frozen), tagger);
+    //decoder.debug = console.debug;
+    const thawed = decoder.decode();
+
+    assert.deepEqual(thawed, ABC);
+  });
+});
