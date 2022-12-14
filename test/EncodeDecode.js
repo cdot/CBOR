@@ -1,37 +1,14 @@
 /* eslint-env node, mocha */
 
-if (typeof requirejs === "undefined") {
-  requirejs = require("requirejs");
-  requirejs.config({ baseUrl: `${__dirname}/..` });
-}
+import { assert} from "chai";
+import MemoryInStream from "../src/MemoryInStream.mjs";
+import MemoryOutStream from "../src/MemoryOutStream.mjs";
+import Encoder from "../src/Encoder.mjs";
+import Decoder from "../src/Decoder.mjs";
 
 describe("CBOR Encode/Decode - no tags", () => {
 
-  let assert,
-      MemoryInStream,
-      MemoryOutStream,
-      Encoder,
-      Decoder;
-
   function UNit() {}
-
-  before(required => {
-    requirejs([
-      "chai",
-      "js/MemoryInStream",
-      "js/MemoryOutStream",
-      "js/Encoder",
-      "js/Decoder" ], (
-        chai, A, B, C, D
-      ) => {
-        assert = chai.assert;
-        MemoryInStream = A,
-        MemoryOutStream = B;
-        Encoder = C;
-        Decoder = D;
-        required();
-      });
-  });
 
   function hex2data(hex) {
     var length = hex.length / 2;
@@ -535,14 +512,11 @@ describe("CBOR Encode/Decode - no tags", () => {
 
     it("basic " + `${testcase.name} ${testcase.hex}`, () => {
       const cbor = hex2data(testcase.hex);
-      const ins = new MemoryInStream(cbor);
-      const decoded = new Decoder(ins).decode();
+      const decoded = Decoder.decode(cbor);
       assert.deepEqual(decoded, testcase.expect);
 
       if (testcase.roundtrip) {
-        const outs = new MemoryOutStream();
-        new Encoder(outs).encode(decoded);
-        const reencoded = outs.Uint8Array;
+        const reencoded = Encoder.encode(decoded);
         assert.deepEqual(
           reencoded, cbor,
           `\n${data2hex(reencoded)}\n!=\n${data2hex(cbor)}`);
@@ -550,54 +524,59 @@ describe("CBOR Encode/Decode - no tags", () => {
     });
   });
 
-  it("Big Array", function() {
+  it("Big Array", () => {
     const value = new Array(0x10001);
     for (var i = 0; i < value.length; ++i)
       value[i] = i;
     const outs = new MemoryOutStream();
-    new Encoder(outs).encode(value);
+    new Encoder(outs).encodes(value);
     const encoded = outs.Uint8Array;
-    const decoded = new Decoder(new MemoryInStream(encoded)).decode();
+    const decoded = new Decoder(new MemoryInStream(encoded)).decodes();
     assert.deepEqual(decoded, value);
   });
 
-  it("Remaining Bytes", function() {
+  it("Invalid ai 30 for type 0", () => {
     try {
-      new Decoder().decode(new ArrayBuffer(2));
+      Decoder.decode(hex2data("1e"));
       assert.fail("exception expected");
     } catch (e) {
+      assert.equal(e.message, "Malformed 0 30");
     }
   });
 
-  it("Invalid length encoding", function() {
+  it("Invalid ai 30 for type 1", () => {
     try {
-      new Decoder(new MemoryInStream(hex2data("1e"))).decode();
+      Decoder.decode(hex2data("3e"));
       assert.fail("exception expected");
     } catch (e) {
+      assert.equal(e.message, "Malformed 1 30");
     }
   });
 
-  it("Invalid length", function() {
+  it("Invalid ai 31 for type 0", () => {
     try {
-      new Decoder(new MemoryInStream(hex2data("1f"))).decode();
+      // 1f = major type 0, ai = 31
+      Decoder.decode(hex2data("1f"));
       assert.fail("exception expected");
     } catch (e) {
+      assert.equal(e.message, "Malformed 0 31");
     }
   });
 
-  it("Invalid indefinite length element type", function() {
+  it("Invalid indefinite length element type", () => {
     try {
-      new Decoder(new MemoryInStream(hex2data("5f00"))).decode();
+      Decoder.decode(hex2data("5f00"));
       assert.fail("exception expected");
     } catch (e) {
+      assert.equal(e.message, "Major type mismatch on chunk 0!=2");
     }
   });
 
-  it("Invalid indefinite length element length", function() {
+  it("Invalid indefinite length element length", () => {
     var threw = false;
     try {
       // This encodes a zero-length chunk, which is permitted by the spec
-      new Decoder(new MemoryInStream(hex2data("5f5f"))).decode();
+      Decoder.decode(hex2data("5f5f"));
     } catch (e) {
       threw = e;
     }
@@ -615,11 +594,8 @@ describe("CBOR Encode/Decode - no tags", () => {
       object: { data: 'lorem ipsum' }
     };
 
-    let outs = new MemoryOutStream();
-    new Encoder(outs).encode(simple);
-    let frozen = outs.Uint8Array;
-
-    let thawed = new Decoder(new MemoryInStream(frozen)).decode();
+    let frozen = Encoder.encode(simple);
+    let thawed = Decoder.decode(frozen);
     assert.deepEqual(thawed, simple);
   });
 });

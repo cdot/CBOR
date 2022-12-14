@@ -1,47 +1,20 @@
 /* eslint-env node, mocha */
 
-if (typeof requirejs === "undefined") {
-  requirejs = require("requirejs");
-  requirejs.config({ baseUrl: `${__dirname}/..` });
-}
+import { assert} from "chai";
+import MemoryInStream from "../src/MemoryInStream.mjs";
+import MemoryOutStream from "../src/MemoryOutStream.mjs";
+import Encoder from "../src/Encoder.mjs";
+import Decoder from "../src/Decoder.mjs";
+import IDREFHandler from "../src/IDREFHandler.mjs";
+import TagHandler from "../src/TagHandler.mjs";
 
 describe("ID-REF tag mixin", () => {
 
-  let assert,
-      Encoder,
-      Decoder,
-      MemoryInStream,
-      MemoryOutStream,
-      IDREFMixin,
-      TagHandler;
-
   function UNit() {}
-
-  before(required => {
-    requirejs([
-      "chai",
-      "js/Encoder",
-      "js/Decoder",
-      "js/MemoryInStream",
-      "js/MemoryOutStream",
-      "js/IDREFMixin",
-      "js/TagHandler" ], (
-        chai, E, D, I, O, Mix, Th
-      ) => {
-        assert = chai.assert;
-        MemoryInStream = I,
-        MemoryOutStream = O;
-        Encoder = E;
-        Decoder = D;
-        IDREFMixin = Mix;
-        TagHandler = Th;
-        required();
-      });
-  });
 
   it("simple-object", () => {
 
-    class Tagger extends IDREFMixin(TagHandler) {
+    class Tagger extends IDREFHandler(TagHandler) {
     }
 
     let other = { data: 'lorem ipsum' };
@@ -56,11 +29,8 @@ describe("ID-REF tag mixin", () => {
     };
 
     const tagger = new Tagger();
-    let outs = new MemoryOutStream();
-    new Encoder(outs, tagger).encode(simple);
-    let frozen = outs.Uint8Array;
-
-    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decode();
+    let frozen = Encoder.encode(simple, tagger);
+    let thawed = Decoder.decode(frozen, tagger);
     assert(!thawed._ignore);
     assert.equal(thawed.number, simple.number);
     assert.equal(thawed.string, simple.string);
@@ -73,17 +43,17 @@ describe("ID-REF tag mixin", () => {
 
   it("array", () => {
 
-    class Tagger extends IDREFMixin(TagHandler) {
+    class Tagger extends IDREFHandler(TagHandler) {
     }
 
     let frood = [ 1, 2, 3, 4];
     const tagger = new Tagger();
     let outs = new MemoryOutStream();
-    new Encoder(outs, tagger).encode(frood);
+    new Encoder(outs, tagger).encodes(frood);
     let frozen = outs.Uint8Array;
 
     //console.log(frozen);
-    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decode();
+    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decodes();
 
     //console.log(JSON.stringify(thawed));
     assert.deepEqual(frood, thawed);
@@ -91,7 +61,7 @@ describe("ID-REF tag mixin", () => {
 
   it("array-ref", () => {
 
-    class Tagger extends IDREFMixin(TagHandler) {
+    class Tagger extends IDREFHandler(TagHandler) {
     }
 
     let frood = [ 1, 2, 3, 4];
@@ -101,27 +71,27 @@ describe("ID-REF tag mixin", () => {
     };
     const tagger = new Tagger();
     let outs = new MemoryOutStream();
-    new Encoder(outs, tagger).encode(simple);
+    new Encoder(outs, tagger).encodes(simple);
     let frozen = outs.Uint8Array;
     //console.log(frozen);
-    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decode();
+    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decodes();
     //console.log(JSON.stringify(thawed));
     assert.deepEqual(thawed.obj1, thawed.obj2);
   });
 
   it("array-of", () => {
 
-    class Tagger extends IDREFMixin(TagHandler) {
+    class Tagger extends IDREFHandler(TagHandler) {
     }
 
     let frood = [ { 1: 2, 3: 4} ];
     const tagger = new Tagger();
     let outs = new MemoryOutStream();
-    new Encoder(outs, tagger).encode(frood);
+    new Encoder(outs, tagger).encodes(frood);
     let frozen = outs.Uint8Array;
 
     //console.log(frozen);
-    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decode();
+    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decodes();
 
     //console.log(JSON.stringify(thawed));
     assert.deepEqual(frood, thawed);
@@ -129,7 +99,7 @@ describe("ID-REF tag mixin", () => {
 
   it("two refs to same simple object", () => {
 
-    class Tagger extends IDREFMixin(TagHandler) {
+    class Tagger extends IDREFHandler(TagHandler) {
     }
 
     let frood = { 1: 2, 3: 4 };
@@ -139,11 +109,11 @@ describe("ID-REF tag mixin", () => {
     };
     const tagger = new Tagger();
     let outs = new MemoryOutStream();
-    new Encoder(outs, tagger).encode(simple);
+    new Encoder(outs, tagger).encodes(simple);
     let frozen = outs.Uint8Array;
 
     //console.log(frozen);
-    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decode();
+    let thawed = new Decoder(new MemoryInStream(frozen), tagger).decodes();
 
     //console.log(JSON.stringify(thawed));
     assert.deepEqual(thawed, simple);
@@ -152,7 +122,7 @@ describe("ID-REF tag mixin", () => {
 
   it("two refs to same array", () => {
 
-    class Tagger extends IDREFMixin(TagHandler) {
+    class Tagger extends IDREFHandler(TagHandler) {
     }
 
     let frood = [ 1, 2, 3, 4 ];
@@ -165,11 +135,11 @@ describe("ID-REF tag mixin", () => {
     const outs = new MemoryOutStream();
     const encoder = new Encoder(outs, tagger);
     encoder.debug = console.debug;
-    encoder.encode(simple);
+    encoder.encodes(simple);
     const frozen = outs.Uint8Array;
 
     //console.log(frozen);
-    const thawed = new Decoder(new MemoryInStream(frozen), tagger).decode();
+    const thawed = new Decoder(new MemoryInStream(frozen), tagger).decodes();
 
     //console.log(JSON.stringify(thawed));
     assert.deepEqual(thawed, simple);
@@ -181,16 +151,16 @@ describe("ID-REF tag mixin", () => {
     let frood = {};
     frood.selfRef = frood;
 
-    const tagger = new (IDREFMixin(TagHandler))();
+    const tagger = new (IDREFHandler(TagHandler))();
 
     let outs = new MemoryOutStream();
-    new Encoder(outs, tagger).encode(frood);
+    new Encoder(outs, tagger).encodes(frood);
     let frozen = outs.Uint8Array;
 
     //console.log(frozen);
     const decoder = new Decoder(new MemoryInStream(frozen), tagger);
     //decoder.debug = console.debug;
-    let thawed = decoder.decode();
+    let thawed = decoder.decodes();
 
     //console.log(JSON.stringify(thawed));
     assert(thawed.selfRef === thawed);

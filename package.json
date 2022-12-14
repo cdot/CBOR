@@ -3,6 +3,11 @@
 	"version": "0.0.1",
 	"node": "17.0.1",
 	"description": "CBOR implementation using streams",
+	"type": "module",
+	"private": true,
+	"files": [
+		"js/index.js"
+	],
 	"author": {
 		"name": "Crawford Currie",
 		"url": "https://github.com/cdot"
@@ -16,22 +21,24 @@
 		"requirejs": "^2.3.6"
 	},
 	"devDependencies": {
-		"chai": ">=4.3.7",
+		"c8": "^7.12.0",
+		"chai": "^4.3.7",
 		"docdash": "^2.0.0",
 		"eslint": ">=8.29.0",
 		"esprima": "^4.0.1",
-		"istanbul": "^0.4.5",
 		"jsdoc": "^4.0.0",
 		"marked": "^4.2.4",
-		"mocha": ">=10.2.0",
-		"nyc": "^15.1.0",
-		"uglify-js": "^3.17.4"
+		"mocha": "^10.2.0",
+		"uglify-js": "^3.17.4",
+		"webpack": "^5.75.0",
+		"webpack-cli": "^5.0.1"
 	},
 	"scripts": {
-		"doc": "jsdoc --verbose -R README.md -c jsdoc_config.json -r -d doc js -t node_modules/docdash",
+		"build": "webpack",
+		"doc": "jsdoc --verbose -R README.md -c jsdoc_config.json -r -d doc src -t node_modules/docdash",
 		"lint": "eslint js -f unix",
-		"test": "mocha --recursive --extension ut --timeout=5000",
-		"coverage": "nyc --hook-run-in-context --hook-run-in-this-context --reporter=html --reporter text npm run test",
+		"test": "mocha test",
+		"coverage": "NODE_ENV=test c8 mocha test",
 		"update": "ncu -u "
 	},
 	"eslintConfig": {

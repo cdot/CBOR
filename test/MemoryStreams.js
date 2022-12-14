@@ -1,31 +1,12 @@
 /* eslint-env node, mocha */
 
-if (typeof requirejs === "undefined") {
-  requirejs = require("requirejs");
-  requirejs.config({ baseUrl: `${__dirname}/..` });
-}
+import { assert } from "chai";
+import MemoryInStream from "../src/MemoryInStream.mjs";
+import MemoryOutStream from "../src/MemoryOutStream.mjs";
 
 describe("Memory streams", () => {
 
-  let assert,
-      MemoryInStream,
-      MemoryOutStream;
-
   function UNit() {}
-
-  before(required => {
-    requirejs([
-      "chai",
-      "js/MemoryInStream",
-      "js/MemoryOutStream" ], (
-        chai, A, B, C, D
-      ) => {
-        assert = chai.assert;
-        MemoryInStream = A,
-        MemoryOutStream = B;
-        required();
-      });
-  });
 
   it("Uint8", () => {
     const MAX = 2 ** 8 - 1;
@@ -122,7 +103,5 @@ describe("Memory streams", () => {
     const ins = new MemoryInStream(a);
     assert.deepEqual(ins.readUint8Array(bytes.byteLength), bytes);
     assert.deepEqual(ins.readUint8Array(empty.byteLength), empty);
-
-    
   });
 });
