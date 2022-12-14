@@ -1,5 +1,5 @@
 {
-	"name": "@cdot/CBOR",
+	"name": "@cdot/cbor",
 	"version": "1.0.0",
 	"description": "CBOR implementation using streams",
     "type": "module",
