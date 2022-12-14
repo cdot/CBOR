@@ -4,9 +4,20 @@
     <meta charset="UTF-8" />
     <title>CBOR Tests</title>
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
-    <script data-main="rjs_mocha.js" src="../node_modules/requirejs/require.js"></script>
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script src="../node_modules/chai/chai.js"></script>
+    <script>mocha.setup('bdd')</script>
   </head>
   <body>
     <div id="mocha"></div>
+    <script type="module" src="MemoryStreams.js"></script>
+    <script type="module" src="EncodeDecode.js"></script>
+    <script type="module" src="IDREF.js"></script>
+    <script type="module" src="KeyDictionary.js"></script>
+    <script type="module" src="TypeMap.js"></script>
+    <script type="module" src="AllHandlers.js"></script>
+    <script type="module">
+      mocha.run();
+    </script>
   </body>
 </html>

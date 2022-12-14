@@ -1,6 +1,5 @@
-/* eslint-env node, mocha */
+/* eslint-env node, mocha, browser */
 
-import { assert} from "chai";
 import MemoryInStream from "../src/MemoryInStream.mjs";
 import MemoryOutStream from "../src/MemoryOutStream.mjs";
 import Encoder from "../src/Encoder.mjs";
@@ -18,6 +17,24 @@ describe("All handlers", () => {
     strap = "original";
     strop() { return "blah"; }
   }
+
+  let assert;
+
+  // This clumsiness is because we want to run these tests in the browser,
+  // which can't resolve node_modules
+  before(done => {
+    if (typeof chai === "undefined") {
+      import("chai")
+      .then(chai => {
+        assert = chai.assert;
+        done();
+      });
+    }
+    else {
+      assert = chai.assert;
+      done();
+    }
+  });
 
   function makeTagger(A, B, C) {
     const tagger = new (A(B(C(TagHandler))))({

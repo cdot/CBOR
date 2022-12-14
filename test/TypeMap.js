@@ -1,6 +1,5 @@
 /* eslint-env node, mocha */
 
-import { assert} from "chai";
 import MemoryInStream from "../src/MemoryInStream.mjs";
 import MemoryOutStream from "../src/MemoryOutStream.mjs";
 import Encoder from "../src/Encoder.mjs";
@@ -9,6 +8,23 @@ import TypeMapHandler from "../src/TypeMapHandler.mjs";
 import TagHandler from "../src/TagHandler.mjs";
 
 describe("TypeMap", () => {
+
+  // This clumsiness is because we want to run these tests in the browser,
+  // which can't resolve node_modules
+  let assert;
+  before(done => {
+    if (typeof chai === "undefined") {
+      import("chai")
+      .then(chai => {
+        assert = chai.assert;
+        done();
+      });
+    }
+    else {
+      assert = chai.assert;
+      done();
+    }
+  });
 
   it("instance-ref", () => {
 
