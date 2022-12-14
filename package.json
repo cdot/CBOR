@@ -1,20 +1,23 @@
 {
-	"name": "CBOR",
-	"version": "0.0.1",
-	"node": "17.0.1",
+	"name": "@cdot/CBOR",
+	"version": "1.0.0",
 	"description": "CBOR implementation using streams",
-	"type": "module",
-	"private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/cdot/CBOR"
+	},
+    "publishConfig": {
+        "registry":"https://npm.pkg.github.com/",
+        "access": "public"
+    },
 	"files": [
 		"js/index.js"
 	],
 	"author": {
 		"name": "Crawford Currie",
 		"url": "https://github.com/cdot"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/cdot/CBOR"
 	},
 	"license": "MIT",
 	"dependencies": {
