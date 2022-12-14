@@ -18,21 +18,19 @@ $ npm install --production --save https://github.com/cdot/CBOR
 If you are just using it to save/restore simple data structures,
 with no requirement for data size optimisation, use it as follows:
 ```
-const outs = new MemoryOutStream();
-new Encoder(outs).encode(decoded);
-const frozen = outs.Uint8Array;
+import { Encoder, Decoder } from "CBOR";
+const frozen = Encoder.encode(data);
 ```
 `frozen` is a `Uint8Array`, the buffer of which can be written e.g. to a file using node.js fs, or to a network partner.
 
 To decode incoming data:
 ```
-const ins = new MemoryInStream(frozen);
-const decoded = new Decoder(ins).decode();
+const decoded = Decoder.decode(frozen);
 ```
-`data` can be a `DataView`, a `TypedArray`, or an `ArrayBuffer`.
+`frozen` can be a `DataView`, a `TypedArray`, or an `ArrayBuffer`.
 
 ## TagHandler
-The tag handler provides the basic support for handling special tags in the
+The tag handler provides support for handling special tags in the
 CBOR data. These tags are usually user-defined. Included are three tag
 handlers that define a number of tags for you.
 
@@ -58,15 +56,12 @@ write it using:
 ```
 const handler = new IDREFHandler(TagHandler)();
 
-const outs = new MemoryOutStream();
-new Encoder(outs, handler).encode(complex);
-const frozen = outs.Uint8Array;
+const frozen = Encoder.encode(complex, handler);
 ...
-const ins = new MemoryInStream(frozen);
-const decoded = new Decoder(ins, handler).decode();
+const decoded = Decoder.decode(frozen, handler);
 
 ```
-The encoder will now spot the double-usage of `simple` and only write it once, and the decoder will restore the original data structure. The handler even supports self-referential structures.
+The encoder will now spot the double-reference to `simple` and only write it once, and the decoder will restore the original data structure. The handler even supports self-referential structures.
 
 ## TypeMapHandler
 Lets you record complex types (classes) in the output data. For example:
@@ -82,11 +77,10 @@ The basic encoder will write this data structure but when decoded you will get b
 ```
 i.e. the prototype `Thing` will be lost. If instead we write it using:
 ```
-const outs = new MemoryOutStream();
 const handler = new TypeMapHandler(TagHandler)({
     typeMap: { Thing: Thing }
 });
-new Encoder(outs, handler).encode(data);
+const frozen = Encoder.encode(data, handler);
 ```
 when this is decoded by a decoder using the same tag handler, the original
 prototype will be restored.
@@ -98,19 +92,16 @@ change the class of an object thus:
 class Thing { ... }
 class subThing extends Thing { ... }
 const data = new subThing();
-const outs = new MemoryOutStream();
 const outhandler = new TypeMapHandler(TagHandler)({
     typeMap: { Thing: Thing }
 });
-new Encoder(outs, outhandler).encode(data);
-const frozen = outs.Uint8Array;
+const frozen = Encoder.encode(data, outhandler);
 ...
 class newThing extends Thing { ... }
 const inhandler = new TypeMapHandler(TagHandler)({
     typeMap: { Thing: newThing }
 });
-const ins = new MemoryInStream(frozen);
-const decoded = new Decoder(ins, inhandler).decode();
+const decoded = Decoder.decode(frozen, inhandler);
 ```
 `decoded` will now be an instance of class `newThing` with all the same attributes as the original `data`.
 
@@ -171,3 +162,7 @@ You can define your own tags and tag handlers. Simply follow the pattern
 of one of the existing tag handlers. If you generate pull request for your
 new handler, please ensure you provide a mocha test for it and test the
 interaction with the other handlers.
+
+## Streams
+You can also use the encoder and decoder on streams. See the code documentation
+for details.
