@@ -36,7 +36,7 @@
 	"scripts": {
 		"build": "webpack",
 		"doc": "jsdoc --verbose -R README.md -c jsdoc_config.json -r -d doc src -t node_modules/docdash",
-		"lint": "eslint js -f unix",
+		"lint": "eslint src -f unix",
 		"test": "mocha test",
 		"coverage": "NODE_ENV=test c8 mocha test",
 		"update": "ncu -u "
