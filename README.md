@@ -3,8 +3,8 @@
 
 There are several CBOR implementations available from npm and github. This
 is not intended to replace them, it was written when experiments with the
-existing solutions failed, due either to complexity, functionality, or poor
-documentaion.
+existing solutions failed, due to complexity, functionality, bugs,
+or poor documentation.
 
 This implementation doesn't claim to be the best; it is intended to write
 and read complex ES6+ Javascript structures with small output, be
@@ -15,7 +15,6 @@ not the primary intention. It's a lot lighter than [cbor-x](https://github.com/k
 * Zero production dependencies
 * Works in browser and node.js
 * Well documented, clearly structured Javascript
-* Test suite using Mocha.
 
 ## Installation
 Install it using:
@@ -43,7 +42,7 @@ const decoded = CBOR.Decoder.decode(frozen);
 import { Encoder, Decoder } from "./node_modules/@cdot/cbor/src/index.js";
 const frozen = Encoder.encode(data);
 ```
-### CJS
+### CommonJS
 ```
 const CBOR = require("@cdot/cbor");
 const frozen = CBOR.Encoder.encode(data);
@@ -54,7 +53,7 @@ requirejs(["@cdot/cbor"], CBOR => {
    const frozen = CBOR.Encoder.encode(data);
 });
 ```
-## Browser (no ESM)
+## Browser
 ```
 <script type="text/javascript" src="./node_modules/@cdot/cbor/dist/index.js"></script>
     <script>
@@ -63,7 +62,7 @@ requirejs(["@cdot/cbor"], CBOR => {
 ```
 ## Tags
 CBOR uses the concept of "tags", user-defined extension points to the protocol.
-This module defines a number of "tag handlers" that define some useful tags.
+Included are a number of handlers that define some useful behaviurs.
 
 We use subclass factories to implement handlers as mixins, as described [here](https://justinfagnani.com/2015/12/21/real-mixins-with-javascript-classes/). This lets you easily use multiple tag handlers. For example:
 ```
@@ -72,7 +71,7 @@ const handler =
 ```
 Generally if you use any of the handlers described below, you should pass
 the same parameters to the handlers used to encode and decode the data
-(though there are exceptions to this, see TypeMapHandler).
+(though there are exceptions to this).
 
 ## IDREFHandler
 Optimises the output by never saving the same structure twice. For example, you might have the following:
@@ -112,6 +111,8 @@ const handler = new TypeMapHandler(TagHandler)({
     typeMap: { Thing: Thing }
 });
 const frozen = CBOR.Encoder.encode(data, handler);
+...
+const decoded = CBOR.Decoder.decode(frozen, handler);
 ```
 when this is decoded using the same tag handler, the original
 prototype will be restored.
@@ -140,8 +141,8 @@ const decoded = CBOR.Decoder.decode(frozen, inhandler);
 attributes as the original `data` (including any additional attributes
 added when it was a `subThing`).
 
-Note that if you want to use both the IDREFHandler and the TypeMapHandler
-then you MUST include the IDREFHandler in the prototype chain first, thus:
+Note that if you want to use both the `IDREFHandler` and the `TypeMapHandler`
+then you MUST include the `IDREFHandler` in the prototype chain first, thus:
 ```
 const inhandler = new IDREFHandler(TypeMapHandler(TagHandler)(...));
 ```
@@ -159,12 +160,12 @@ class Location {
   latitude = 0;
   longitude = 0;
 }
-const data = [ ... array of 10,000 new Location() ... ]
+const data = [ ... array of 10,000 Location ... ]
 ```
-then there will be 10,000 copies of the word `latitude` in the output. To
-optimise this, the KeyDictionaryHandler creates a lookup table of key strings
-and replaces the keys with a simple integer ID. When the data is decoded, the
-key dictionary is used to recreate the original attribute names.
+then there will be 10,000 copies of the word `latitude` and 10,000 copies of the word `longitude` in the output. To
+optimise this, the `KeyDictionaryHandler` creates a lookup table of key
+strings and replaces the keys with a simple integer ID. When the data is
+decoded, the key dictionary is used to recreate the original attribute names.
 
 The handler can be used with an known list of keys e.g.
 ```
@@ -188,7 +189,7 @@ keys will be saved.
 ## Other Tag Handlers
 
 You can define your own tags and tag handlers. Simply follow the pattern
-of one of the existing tag handlers. If you generate pull request for your
+of one of the existing tag handlers. If you generate a pull request for your
 new handler, please ensure you provide a mocha test for it and test the
 interaction with the other handlers.
 
