@@ -73,5 +73,5 @@ class DataOutStream {
   }
 };
 
-export default DataOutStream;
+export { DataOutStream };
 

@@ -110,4 +110,4 @@ class DataInStream {
   }
 };
 
-export default DataInStream;
+export { DataInStream };

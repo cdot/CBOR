@@ -1,11 +1,11 @@
 /* eslint-env node, mocha */
 
-import MemoryInStream from "../src/MemoryInStream.mjs";
-import MemoryOutStream from "../src/MemoryOutStream.mjs";
-import Encoder from "../src/Encoder.mjs";
-import Decoder from "../src/Decoder.mjs";
-import KeyDictionaryHandler from "../src/KeyDictionaryHandler.mjs";
-import TagHandler from "../src/TagHandler.mjs";
+import { MemoryInStream } from "../src/MemoryInStream.mjs";
+import { MemoryOutStream } from "../src/MemoryOutStream.mjs";
+import { Encoder } from "../src/Encoder.mjs";
+import { Decoder } from "../src/Decoder.mjs";
+import { KeyDictionaryHandler } from "../src/KeyDictionaryHandler.mjs";
+import { TagHandler } from "../src/TagHandler.mjs";
 
 describe("KeyDictionary", () => {
 
@@ -43,10 +43,10 @@ describe("KeyDictionary", () => {
       Crocodile:  [
         { Aardvaark: A },
         { Budgerigar: A },
-        { Crocodile: A }
+        { Crocodile: A, Aardvaark: "A" }
       ]
     }
-    };
+  };
 
   it("JSON", () => {
     const frozen = JSON.stringify(ABC);
@@ -56,42 +56,52 @@ describe("KeyDictionary", () => {
     assert.deepEqual(thawed, ABC);
   });
 
-  it("no key dictionary", () => {
-    const tagger = new (KeyDictionaryHandler(TagHandler))();
+  it("no tag handler", () => {
+    const frozen = Encoder.encode(ABC);
+
+    console.log("no tag handler", frozen.length);
+
+    const thawed = Decoder.decode(frozen);
+
+    assert.deepEqual(thawed, ABC);
+  });
+
+  it("no keys known", () => {
+    const tagger = new (KeyDictionaryHandler(TagHandler))({
+      //debug: console.debug
+    });
 
     const frozen = Encoder.encode(ABC, tagger);
 
-    console.log("Unknown keys", frozen.length);
+    console.log("no keys known", frozen.length);
 
     const thawed = Decoder.decode(frozen, tagger);
 
     assert.deepEqual(thawed, ABC);
   });
 
-  it("key dictionary, known keys, write", () => {
+  it("some keys known", () => {
     const tagger = new (KeyDictionaryHandler(TagHandler))({
-      keys: [ "Aardvaark", "Budgerigar", "Crocodile" ],
-      writeKeyDict: true
+      keys: [ "Aardvaark", "Budgerigar" ]
     });
 
     const frozen = Encoder.encode(ABC, tagger);
 
-    console.log("Known keys, write", frozen.length);
+    console.log("some keys known", frozen.length);
 
     const thawed = Decoder.decode(frozen, tagger);
 
     assert.deepEqual(thawed, ABC);
   });
 
-  it("key dictionary, known keys, no write", () => {
+  it("all keys known", () => {
     const tagger = new (KeyDictionaryHandler(TagHandler))({
-      keys: [ "A", "B", "C" ],
-      writeKeyDict: false
+      keys: [ "Aardvaark", "Budgerigar", "Crocodile" ]
     });
 
     const frozen = Encoder.encode(ABC, tagger);
 
-    console.log("Known keys, no write", frozen.length);
+    console.log("all keys known", frozen.length);
 
     const thawed = Decoder.decode(frozen, tagger);
 

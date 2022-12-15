@@ -3,8 +3,8 @@
  * This version Copyright (C) 2022 Crawford Currie
  */
 
-import TagHandler from "./TagHandler.mjs";
-import MemoryOutStream from "./MemoryOutStream.mjs";
+import { TagHandler } from "./TagHandler.mjs";
+import { MemoryOutStream } from "./MemoryOutStream.mjs";
   
 const POW_2_53 = 2 ** 53;
 
@@ -201,13 +201,14 @@ class Encoder {
    * @param {TagHandler?} optional tag handler
    * @return {Uint8Array} the encoded data
    */
-  static encode(value, handler) {
+  static encode(value, handler, debug) {
     const outs = new MemoryOutStream();
     const encoder = new Encoder(outs, handler);
+    encoder.debug = debug;
     encoder.encodes(value);
     return outs.Uint8Array;
   }
 }
 
-export default Encoder;
+export { Encoder };
 

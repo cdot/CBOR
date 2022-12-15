@@ -28,7 +28,7 @@ const CBOR_CN   = 25443;
  * it in the mixins order)
  * @mixin TypeMapHandler
  */
-export default superclass => class TypeMapHandler extends superclass {
+const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
 
   /**
    * @param {object.<string,Class>} options.typeMap Map of prototype
@@ -122,4 +122,6 @@ export default superclass => class TypeMapHandler extends superclass {
     return ret;
   }
 };
+
+export { TypeMapHandler };
 

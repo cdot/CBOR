@@ -21,7 +21,7 @@ const CBOR_ID   = 25444;
  * it in the mixins order)
  * @mixin IDREFHandler
  */
-export default superclass => class IDREFHandler extends superclass {
+const IDREFHandler = superclass => class IDREFHandler extends superclass {
 
   /**
    * @param {object} options
@@ -159,3 +159,4 @@ export default superclass => class IDREFHandler extends superclass {
   }
 };
 
+export { IDREFHandler }

@@ -9,8 +9,8 @@
 
 /* global TypedArray */
 
-import TagHandler from "./TagHandler.mjs";
-import MemoryInStream from "./MemoryInStream.mjs";
+import { TagHandler } from "./TagHandler.mjs";
+import { MemoryInStream } from "./MemoryInStream.mjs";
 
 /**
  * Decoder for objects encoded according to the CBOR specification.
@@ -327,5 +327,5 @@ class Decoder {
   }
 }
 
-export default Decoder;
+export { Decoder };
 

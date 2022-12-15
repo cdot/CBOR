@@ -110,4 +110,4 @@ class TagHandler {
   decodeKey(id, decoder) { return id; }
 }
 
-export default TagHandler;
+export { TagHandler }

@@ -7,8 +7,15 @@
 // dictionary is read from the end of the input data.
 const key_re = /^_#_(.+)$/;
 const PROCESSED = "#(^)#";
+
+/**
+ * Locate uses of key placeholders in data and replace them with
+ * the real key.
+ * @private
+ */
 function remapKeys(data, i2k) {
   const processed = [];
+
   function _remapKeys(data) {
     if (typeof data === "object") {
       if (Array.isArray(data)) {
@@ -51,27 +58,44 @@ function remapKeys(data, i2k) {
  * keys the largest and slowest.
  * @mixin KeyDictionaryHandler
  */
-export default superclass => class KeyDictionaryHandler extends superclass {
+const KeyDictionaryHandler = superclass => class extends superclass {
 
   /**
    * The same parameters have to be provided to the tag handlers
    * at both ends of the communication.
    * @param {string[]} options.keys list of keys for the key dictionary
-   * @param {boolean} options.writeKeys if true, write the keys into the output
-   * data (and expect to see them at the end of input data).
    */
   constructor(options) {
     super(options);
-    this.writeKeyDict = this.options.writeKeyDict;
-    if (this.options.keys || this.options.writeKeyDict) {
-      this.k2i = {};
-      this.i2k = [];
-      if (this.options.keys)
-        this.options.keys.forEach(k => {
-          this.k2i[k] = this.i2k.length;
-          this.i2k.push(k);
-        });
-    }
+
+    /**
+     * Map from key name to integer ID. Used in encoding only.
+     * @member {object.<string,number>}
+     * @private
+     */
+    this.k2i = {};
+
+    /**
+     * List of known keys when the handler is constructed. Used in
+     * encoding and decoding.
+     * @member {string[]}
+     * @private
+     */
+    this.i2k = [];
+
+    if (this.options.keys)
+      this.options.keys.forEach(k => {
+        this.k2i[k] = this.i2k.length;
+        this.i2k.push(k);
+      });
+
+    /**
+     * List of keys added during encoding because they were not found
+     * in i2k. Used in encoding and decoding.
+     * @member {string[]}
+     * @private
+     */
+    this.i2k_added = [];
   }
 
   /**
@@ -81,8 +105,7 @@ export default superclass => class KeyDictionaryHandler extends superclass {
    */
   finishEncoding(encoder) {
     super.finishEncoding(encoder);
-    if (this.options.writeKeyDict)
-      encoder.encodeItem(this.i2k);
+    encoder.encodeItem(this.i2k_added);
   }
 
   /**
@@ -90,13 +113,15 @@ export default superclass => class KeyDictionaryHandler extends superclass {
    * @instance
    * @memberof KeyDictionaryHandler
    */
-  finishDecoding(encoder, data) {
-    if (this.options.writeKeyDict) {
-      // Get the key dict
-      const i2k = encoder.decodeItem();
-      remapKeys(data, i2k);
-    }
-    super.finishEncoding(encoder, data);
+  finishDecoding(decoder, data) {
+    super.finishDecoding(decoder, data);
+    // Get the key dict
+    this.i2k_added = decoder.decodeItem();
+    /* istanbul ignore if */
+    if (this.options.debug)
+      this.options.debug(`Read ${this.i2k_added.length} added keys`);
+    // remap all keys. i2k_added is contiguous after i2k
+    remapKeys(data, [ ...this.i2k, ...this.i2k_added ]);
   }
 
   /**
@@ -105,16 +130,21 @@ export default superclass => class KeyDictionaryHandler extends superclass {
    * @memberof KeyDictionaryHandler
    */
   encodeKey(key, encoder) {
-    if (typeof super.encodeKey(key, this) === "undefined")
+    if (typeof super.encodeKey(key, this) === "undefined") {
+      /* istanbul ignore if */
+      if (this.options.debug)
+        this.options.debug(`\tKDh ignore ${key}`);
       return undefined;
+    }
     if (!this.i2k)
       return key;
     let id = this.k2i[key];
     if (typeof id === "undefined") {
       /* istanbul ignore if */
-      if (encoder.debug) encoder.debug(`ADD ${key}`);
-      this.k2i[key] = id = this.i2k.length;
-      this.i2k.push(key);
+      this.k2i[key] = id = this.i2k.length + this.i2k_added.length;
+      if (this.options.debug)
+        this.options.debug(`\tKDh add ${key} ${id}`);
+      this.i2k_added.push(key);
     }
     return id;
   }
@@ -125,17 +155,18 @@ export default superclass => class KeyDictionaryHandler extends superclass {
    * @memberof KeyDictionaryHandler
    */
   decodeKey(id, decoder) {
-    if (this.options.writeKeyDict) {
-      // The dictionary will be read at the end of the input data.
-      // Insert a placeholder key that will be resolved
-      // of decoding, when we have unpacked the dictionary.
-      return `_#_${id}`;
-    }
-    if (!this.i2k)
-      return id;
-    /* istanbul ignore if */
-    if (id < 0 || id >= this.i2k.length)
-      throw Error(`No key with id ${id}`);
-    return this.i2k[id];
+    if (id < this.i2k.length)
+      return this.i2k[id];
+
+    // id is not in the supplied key index.
+    // The dictionary for supplemental keys will be read at the end
+    // of the input data. For now, we insert a placeholder key that
+    // will be resolved at the end of decoding, when we have unpacked
+    // the dictionary.
+    // SMELL: there's a vanishingly small risk that this might
+    // duplicate a "real" key.
+    return `_#_${id}`;
   }
 };
+
+export { KeyDictionaryHandler }
