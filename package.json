@@ -13,7 +13,11 @@
 		"access": "public"
 	},
 	"files": [
-		"js/index.js"
+		"package.json",
+		"README.md",
+		"dist/index.js",
+		"src/*.js",
+		"src/*.mjs"
 	],
 	"author": {
 		"name": "Crawford Currie",
