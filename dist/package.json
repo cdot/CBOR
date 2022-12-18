@@ -1,9 +1,0 @@
-{
-	"name": "@cdot/cbor",
-	"description": "CBOR implementation using streams",
-	"author": {
-		"name": "Crawford Currie",
-		"url": "https://github.com/cdot"
-	},
-	"license": "MIT"
-}

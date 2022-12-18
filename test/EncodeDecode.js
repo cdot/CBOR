@@ -1,9 +1,9 @@
 /* eslint-env node, mocha, browser */
 
-import { MemoryInStream } from "../src/MemoryInStream.mjs";
-import { MemoryOutStream } from "../src/MemoryOutStream.mjs";
-import { Encoder } from "../src/Encoder.mjs";
-import { Decoder } from "../src/Decoder.mjs";
+import { MemoryInStream } from "../src/MemoryInStream.js";
+import { MemoryOutStream } from "../src/MemoryOutStream.js";
+import { Encoder } from "../src/Encoder.js";
+import { Decoder } from "../src/Decoder.js";
 
 describe("CBOR Encode/Decode - no tags", () => {
 

@@ -1,11 +1,11 @@
 /* eslint-env node, mocha */
 
-import { MemoryInStream } from "../src/MemoryInStream.mjs";
-import { MemoryOutStream } from "../src/MemoryOutStream.mjs";
-import { Encoder } from "../src/Encoder.mjs";
-import { Decoder } from "../src/Decoder.mjs";
-import { KeyDictionaryHandler } from "../src/KeyDictionaryHandler.mjs";
-import { TagHandler } from "../src/TagHandler.mjs";
+import { MemoryInStream } from "../src/MemoryInStream.js";
+import { MemoryOutStream } from "../src/MemoryOutStream.js";
+import { Encoder } from "../src/Encoder.js";
+import { Decoder } from "../src/Decoder.js";
+import { KeyDictionaryHandler } from "../src/KeyDictionaryHandler.js";
+import { TagHandler } from "../src/TagHandler.js";
 
 describe("KeyDictionary", () => {
 

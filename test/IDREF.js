@@ -1,11 +1,11 @@
 /* eslint-env node, mocha */
 
-import { MemoryInStream } from "../src/MemoryInStream.mjs";
-import { MemoryOutStream } from "../src/MemoryOutStream.mjs";
-import { Encoder } from "../src/Encoder.mjs";
-import { Decoder } from "../src/Decoder.mjs";
-import { IDREFHandler } from "../src/IDREFHandler.mjs";
-import { TagHandler } from "../src/TagHandler.mjs";
+import { MemoryInStream } from "../src/MemoryInStream.js";
+import { MemoryOutStream } from "../src/MemoryOutStream.js";
+import { Encoder } from "../src/Encoder.js";
+import { Decoder } from "../src/Decoder.js";
+import { IDREFHandler } from "../src/IDREFHandler.js";
+import { TagHandler } from "../src/TagHandler.js";
 
 describe("ID-REF tag mixin", () => {
 

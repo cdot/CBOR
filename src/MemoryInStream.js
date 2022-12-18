@@ -2,7 +2,7 @@
   License MIT. See README.md at the root of this distribution for full copyright
   and license information.*/
 
-import { DataInStream } from "./DataInStream.mjs";
+import { DataInStream } from "./DataInStream.js";
 
 const POW_2_24 = 5.960464477539063e-8;
 const POW_2_32 = 2 ** 32;

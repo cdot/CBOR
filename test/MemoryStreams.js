@@ -1,7 +1,7 @@
 /* eslint-env node, mocha, browser */
 
-import { MemoryInStream } from "../src/MemoryInStream.mjs";
-import { MemoryOutStream } from "../src/MemoryOutStream.mjs";
+import { MemoryInStream } from "../src/MemoryInStream.js";
+import { MemoryOutStream } from "../src/MemoryOutStream.js";
 
 describe("Memory streams", () => {
 

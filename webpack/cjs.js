@@ -1,22 +1,21 @@
 import path from "path";
 import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const config = {
   mode: "production",
-  entry: `${__dirname}/src/index.js`,
+  entry: `${__dirname}/../src/CBOR.js`,
   output: {
     filename: 'index.js',
-    path: `${__dirname}/dist`,
+    path: `${__dirname}/../dist/cjs`,
     globalObject: "this",
     library: {
-      name: "CBOR",
+      name: "cbor",
       type: "umd"
     }
   },
   resolve: {
-    extensions: [ '.mjs' ]
+    extensions: [ '.js' ]
   }
 };
 

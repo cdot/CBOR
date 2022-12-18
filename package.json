@@ -1,9 +1,14 @@
 {
 	"name": "@cdot/cbor",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "CBOR implementation using streams",
 	"type": "module",
-	"main": "./dist/index.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "exports": {
+    "import": "./dist/mjs/index.js",
+    "require": "./dist/cjs/index.js"
+  },
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/cdot/CBOR"
@@ -15,10 +20,9 @@
 	"files": [
 		"package.json",
 		"README.md",
-		"dist/package.json",
-		"dist/index.js",
-		"src/*.js",
-		"src/*.mjs"
+		"dist/*/*.js",
+		"dist/*/*.json",
+		"src/*.js"
 	],
 	"author": {
 		"name": "Crawford Currie",
@@ -39,7 +43,7 @@
 		"webpack-cli": "^5.0.1"
 	},
 	"scripts": {
-		"build": "webpack",
+		"build": "webpack -c webpack/cjs.js & webpack -c webpack/mjs.js & webpack -c webpack/amd.js",
 		"doc": "jsdoc --verbose -R README.md -c jsdoc_config.json -r -d doc src -t node_modules/docdash",
 		"lint": "eslint src -f unix",
 		"test": "mocha test",

@@ -57,22 +57,18 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
    */
   encode(value, encoder) {
 
-    if (value.constructor
-        && value.constructor.name
-        && value.constructor.name !== "Object") {
-
-      let freezable = value.constructor;
-      while (freezable && freezable.name !== "Object") {
-        if (this.typeMap[freezable.name]) {
-          encoder.writeTag(CBOR_CN);
-          encoder.encodeItem(freezable.name);
-          /* istanbul ignore if */
-          if (encoder.debug)
-            encoder.debug("\tclassified as", freezable.name);
-          break;
-        }
-        freezable = Object.getPrototypeOf(freezable);
+    let freezable = value.constructor;
+    while (freezable && freezable.name !== "Object") {
+      if (this.typeMap[freezable.name]) {
+        encoder.writeTag(CBOR_CN);
+        encoder.encodeItem(freezable.name);
+        /* istanbul ignore if */
+        if (encoder.debug)
+          encoder.debug(
+            `\t'${value.constructor.name}' marked as ${freezable.name}`);
+        break; // while
       }
+      freezable = Object.getPrototypeOf(freezable);
     }
 
     // Allow other mixins to have a crack at the object

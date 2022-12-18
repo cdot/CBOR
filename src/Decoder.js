@@ -9,8 +9,8 @@
 
 /* global TypedArray */
 
-import { TagHandler } from "./TagHandler.mjs";
-import { MemoryInStream } from "./MemoryInStream.mjs";
+import { TagHandler } from "./TagHandler.js";
+import { MemoryInStream } from "./MemoryInStream.js";
 
 /**
  * Decoder for objects encoded according to the CBOR specification.
@@ -181,7 +181,7 @@ class Decoder {
     const initialByte = this.stream.readUint8();
     const majorType = initialByte >> 5;
     const ai = initialByte & 0x1f; // additional information
-    let len, tag, thawed;
+    let len, tag, text, thawed;
 
     switch (majorType) {
 
@@ -209,13 +209,16 @@ class Decoder {
       /* istanbul ignore if */
       if (ai === 0x1f) {
         if (this.debug) this.debug(`${this.stream.readPos}: TEXT? ${ai}`);
-        return new TextDecoder().decode(this.readIndefiniteBytes(majorType));
+        text = new TextDecoder().decode(this.readIndefiniteBytes(majorType));
+      } else {
+        if (this.debug) this.debug(`${this.stream.readPos}: TEXT `);
+        len = this.readArgument(ai, 3);
+        if (len < 0)
+          throw Error(`Invalid text length ${len}`);
+        text = new TextDecoder().decode(this.stream.readUint8Array(len));
       }
-      if (this.debug) this.debug(`${this.stream.readPos}: TEXT `);
-      len = this.readArgument(ai, 3);
-      if (len < 0)
-        throw Error(`Invalid text length ${len}`);
-      return new TextDecoder().decode(this.stream.readUint8Array(len));
+      if (this.debug) this.debug(`\t"${text}"`);
+      return text;
 
     case 4: // array of data items
       if (ai === 0x1f) {

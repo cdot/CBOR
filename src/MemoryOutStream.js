@@ -1,7 +1,7 @@
 /**
  * A stream for use with CBOREncoder / CBORDecoder, works on a DataView
  */
-import { DataOutStream } from "./DataOutStream.mjs";
+import { DataOutStream } from "./DataOutStream.js";
 
 const POW_2_32 = 2 ** 32;
 

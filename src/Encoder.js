@@ -3,8 +3,8 @@
  * This version Copyright (C) 2022 Crawford Currie
  */
 
-import { TagHandler } from "./TagHandler.mjs";
-import { MemoryOutStream } from "./MemoryOutStream.mjs";
+import { TagHandler } from "./TagHandler.js";
+import { MemoryOutStream } from "./MemoryOutStream.js";
   
 const POW_2_53 = 2 ** 53;
 

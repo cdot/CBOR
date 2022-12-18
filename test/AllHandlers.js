@@ -1,27 +1,27 @@
 /* eslint-env node, mocha, browser */
 
-import { MemoryInStream } from "../src/MemoryInStream.mjs";
-import { MemoryOutStream } from "../src/MemoryOutStream.mjs";
-import { Encoder } from "../src/Encoder.mjs";
-import { Decoder } from "../src/Decoder.mjs";
-import { TypeMapHandler } from "../src/TypeMapHandler.mjs";
-import { KeyDictionaryHandler } from "../src/KeyDictionaryHandler.mjs";
-import { IDREFHandler } from "../src/IDREFHandler.mjs";
-import { TagHandler } from "../src/TagHandler.mjs";
+import { MemoryInStream } from "../src/MemoryInStream.js";
+import { MemoryOutStream } from "../src/MemoryOutStream.js";
+import { Encoder } from "../src/Encoder.js";
+import { Decoder } from "../src/Decoder.js";
+import { TypeMapHandler } from "../src/TypeMapHandler.js";
+import { KeyDictionaryHandler } from "../src/KeyDictionaryHandler.js";
+import { IDREFHandler } from "../src/IDREFHandler.js";
+import { TagHandler } from "../src/TagHandler.js";
 
 describe("All handlers", () => {
 
   function UNit() {}
 
-  class Wibble {
-    strap = "original";
-    strop() { return "blah"; }
+  class TestObject {
+    fieldOne = "original";
+    fnord() { return "blah"; }
   }
 
   let assert;
 
   // This clumsiness is because we want to run these tests in the browser,
-  // which can't resolve node_modules
+  // which can't resolve node_modules/
   before(done => {
     if (typeof chai === "undefined") {
       import("chai")
@@ -39,7 +39,7 @@ describe("All handlers", () => {
   function makeTagger(A, B, C) {
     const tagger = new (A(B(C(TagHandler))))({
       typeMap: {
-        Wibble: Wibble
+        TestObject: TestObject
       },
       keys: [ "Budgerigar" ],
       writeKeyDict: true
@@ -47,20 +47,20 @@ describe("All handlers", () => {
 
     // TypeMap
     {
-      const frood = new Wibble('frood1');
-      frood.strap = "modified";
-      const simple = {
-        obj1: frood,
-        obj2: frood,
-        obj3: new Wibble('not frood')
-      };
+      const frood = new TestObject('frood1');
+      frood.fieldOne = "modified";
+      const simple = new TestObject();
+      simple.obj1 = frood;
+      simple.obj2 = frood;
+      simple.obj3 = new TestObject('not frood');
 
       const frozen = Encoder.encode(simple, tagger);
       const thawed = Decoder.decode(frozen, tagger);
 
-      assert(thawed.obj1 instanceof Wibble);
-      assert(thawed.obj2 instanceof Wibble);
-      assert(thawed.obj3 instanceof Wibble);
+      assert(thawed instanceof TestObject);
+      assert(thawed.obj1 instanceof TestObject);
+      assert(thawed.obj2 instanceof TestObject);
+      assert(thawed.obj3 instanceof TestObject);
       assert.deepEqual(thawed, simple);
     }
 
