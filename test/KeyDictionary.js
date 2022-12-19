@@ -107,4 +107,14 @@ describe("KeyDictionary", () => {
 
     assert.deepEqual(thawed, ABC);
   });
+
+  /*it("data length", () => {
+    const none = new TagHandler();
+    const some = new (KeyDictionaryHandler(TagHandler))({ added: console.log });
+    const abc = { "a": 1, "ab": 2, "abc": 3, "abcd": 4, "abcde": 5 };
+
+    const ABC = [ abc, abc, abc, abc, abc, abc, abc, abc, abc, abc ];
+    console.log(Encoder.encode(ABC, none).byteLength);
+    console.log(Encoder.encode(ABC, some).byteLength);
+  });*/
 });

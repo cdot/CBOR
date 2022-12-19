@@ -39,17 +39,17 @@ const decoded = CBOR.Decoder.decode(frozen);
 
 ### ESM
 ```
-import { Encoder, Decoder } from "./node_modules/@cdot/cbor/src/index.js";
+import { Encoder, Decoder } from "@cdot/cbor";
 const frozen = Encoder.encode(data);
 ```
 ### CommonJS
 ```
-const CBOR = require("@cdot/cbor");
-const frozen = CBOR.Encoder.encode(data);
+const { Encoder, Decoder } = require("@cdot/cbor");
+const frozen = Encoder.encode(data);
 ```
-## `requirejs`
+## AMD
 ```
-requirejs(["@cdot/cbor"], CBOR => {
+require(["@cdot/cbor"], CBOR => {
    const frozen = CBOR.Encoder.encode(data);
 });
 ```

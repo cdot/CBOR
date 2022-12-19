@@ -2,11 +2,18 @@
   License MIT. See README.md at the root of this distribution for full copyright
   and license information.*/
 
-// Rename keys from their temporary index form to the actual key
-// looked up in the key dictionary. This is only used when a key
-// dictionary is read from the end of the input data.
-const key_re = /^_#_(.+)$/;
-const PROCESSED = "#(^)#";
+// Placeholder key construction. Mixed unicode scripts are used to
+// minimise risk of collision with real key names.
+const SECRET = "ആଈ";
+
+// Rename keys from their placeholder form to the actual key looked up
+// in the key dictionary.
+const key_re = new RegExp(`^${SECRET}(.+)$`);
+
+// Key used when a datum has already been processed - removed after
+// key remapping. Mixed unicode scripts are used to minimise risk of
+// collision with real key names.
+const PROCESSED = "ρѓσςεรຂεϑ";
 
 /**
  * Locate uses of key placeholders in data and replace them with
@@ -17,7 +24,7 @@ function remapKeys(data, i2k) {
   const processed = [];
 
   function _remapKeys(data) {
-    if (typeof data === "object") {
+    if (typeof data === "object" && data !== null) {
       if (Array.isArray(data)) {
         for (const d of data)
           _remapKeys(d);
@@ -44,18 +51,9 @@ function remapKeys(data, i2k) {
 }
 
 /**
- * To reduce data volume, it is possible to use a key dictionary (a
- * list of all known keys used in JS objects). This can save a lot of
- * space when a lot of similar objects are used.
- * This mixin can be used in 3 modes:
- * * known keys, where the caller provides a list of keys they expect
- *   to be there.
- * * partial keys, where some (but not necessarily all) keys are known
- *   at write time.
- * * unknown keys, where no keys are known.
- * The size of the generated binary will vary according to which mode
- * is used, with known keys being the smallest and fastest, and unknown
- * keys the largest and slowest.
+ * To reduce data volume, use a key dictionary (a list of all known
+ * keys used in JS objects). This can save a lot of space when a lot
+ * of similar objects are used.
  * @mixin KeyDictionaryHandler
  */
 const KeyDictionaryHandler = superclass => class extends superclass {
@@ -63,7 +61,13 @@ const KeyDictionaryHandler = superclass => class extends superclass {
   /**
    * The same parameters have to be provided to the tag handlers
    * at both ends of the communication.
-   * @param {string[]} options.keys list of keys for the key dictionary
+   * @param {string[]} options.keys list of known keys for the key.
+   * Minimum output size will be achieved when this list is complete
+   * i.e. all possible keys are known in advance.
+   * @param {function?} options.added optional function called when an
+   * unknown key is added to the key set. Passed the key and the id it was
+   * assigned. This can be useful when building a comprehensive key set
+   * for communication in complex code.
    */
   constructor(options) {
     super(options);
@@ -140,10 +144,12 @@ const KeyDictionaryHandler = superclass => class extends superclass {
       return key;
     let id = this.k2i[key];
     if (typeof id === "undefined") {
-      /* istanbul ignore if */
+      // It might seem tempting to compare the encoding length of the
+      // id against the raw key length, but it rarely improves the
+      // data volume enough to make the complexity worthwhile.
       this.k2i[key] = id = this.i2k.length + this.i2k_added.length;
-      if (this.options.debug)
-        this.options.debug(`\tKDh add ${key} ${id}`);
+      if (this.options.added)
+        this.options.added(key, id);
       this.i2k_added.push(key);
     }
     return id;
@@ -165,7 +171,7 @@ const KeyDictionaryHandler = superclass => class extends superclass {
     // the dictionary.
     // SMELL: there's a vanishingly small risk that this might
     // duplicate a "real" key.
-    return `_#_${id}`;
+    return `${SECRET}${id}`;
   }
 };
 
