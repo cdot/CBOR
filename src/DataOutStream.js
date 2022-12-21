@@ -71,7 +71,7 @@ class DataOutStream {
     for (let i = 0; i < value.length; ++i)
       this.writeUint8(this.writePos++, value[i]);
   }
-};
+}
 
 export { DataOutStream };
 

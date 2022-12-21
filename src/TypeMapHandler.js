@@ -46,6 +46,7 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
     /**
      * Prototype of the next object to be created.
      * @member {object}
+     * @private
      */
     this.pendingProto = undefined;
   }
@@ -56,20 +57,25 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
    * @memberof TypeMapHandler
    */
   encode(value, encoder) {
-
     let freezable = value.constructor;
+    const exts = [];
+    let tagged = false;
     while (freezable && freezable.name !== "Object") {
+      exts.push(freezable.name);
       if (this.typeMap[freezable.name]) {
         encoder.writeTag(CBOR_CN);
         encoder.encodeItem(freezable.name);
+        tagged = true;
         /* istanbul ignore if */
         if (encoder.debug)
-          encoder.debug(
-            `\t'${value.constructor.name}' marked as ${freezable.name}`);
+          encoder.debug(`\tTYPE_TAG ${exts.join("-")}`);
         break; // while
       }
       freezable = Object.getPrototypeOf(freezable);
     }
+
+    if (!tagged && encoder.debug && !Array.isArray(value))
+      encoder.debug(`\tCAN'T TYPE-TAG ${exts}`);
 
     // Allow other mixins to have a crack at the object
     return super.encode(value, encoder);

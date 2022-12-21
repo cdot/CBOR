@@ -45,27 +45,19 @@
 	"scripts": {
 		"build": "webpack -c webpack/cjs.js & webpack -c webpack/mjs.js & webpack -c webpack/amd.js",
 		"doc": "jsdoc --verbose -R README.md -c jsdoc_config.json -r -d doc src -t node_modules/docdash",
-		"lint": "eslint src -f unix",
+		"lint": "eslint --format unix src",
 		"test": "mocha test",
 		"coverage": "NODE_ENV=test c8 mocha test",
 		"update": "ncu -u "
 	},
-	"eslintConfig": {
+  "eslintConfig": {
 		"extends": "eslint:recommended",
 		"parserOptions": {
-			"sourceType": "module",
-			"ecmaVersion": 13
+			"sourceType": "module"
 		},
 		"env": {
 			"shared-node-browser": true,
-			"es6": true
-		},
-		"globals": {
-			"assert": "writable",
-			"define": "writable",
-			"requirejs": "writable",
-			"Mocha": "writable",
-			"WeakRef": "readonly"
+		    "es2022": true
 		},
 		"rules": {
 			"camelcase": 0,
@@ -73,7 +65,7 @@
 			"dot-notation": 1,
 			"new-cap": 0,
 			"no-alert": 0,
-			"no-console": 0,
+			"no-console": 1,
 			"no-debugger": 0,
 			"no-eval": 0,
 			"no-fallthrough": 0,
@@ -85,7 +77,7 @@
 			"no-redeclare": [
 				"error",
 				{
-					"builtinGlobals": true
+					"builtinGlobals": false
 				}
 			],
 			"no-trailing-spaces": 1,

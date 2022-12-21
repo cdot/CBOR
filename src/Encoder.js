@@ -5,7 +5,7 @@
 
 import { TagHandler } from "./TagHandler.js";
 import { MemoryOutStream } from "./MemoryOutStream.js";
-  
+
 const POW_2_53 = 2 ** 53;
 
 /**

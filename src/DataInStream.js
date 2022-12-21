@@ -76,7 +76,6 @@ class DataInStream {
   /* istanbul ignore next */
   /**
    * Read a known number of bytes.
-   
    * @param {number} length number of bytes to read
    * @return {Uint8Array} the data read
    */
@@ -108,6 +107,6 @@ class DataInStream {
   set mark(m) {
     throw Error("DataInStream.set mark");
   }
-};
+}
 
-export { DataInStream };
+export { DataInStream }

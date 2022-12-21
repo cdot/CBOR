@@ -202,7 +202,7 @@ class Decoder {
           return this.readIndefiniteBytes(majorType);
       len = this.readArgument(ai, 2);
       if (len < 0)
-        throw Error(`Invalid byte string length ${len}`);     
+        throw Error(`Invalid byte string length ${len}`);
       return this.stream.readUint8Array(len);
 
     case 3: // UTF-8 encoded text string
@@ -272,7 +272,7 @@ class Decoder {
       case 34: break; // base64
       case 36: break; // MIME message
       case 55799: break; // self-described CBOR
-      }       
+      }
 
       // Default to just decoding the following data
       return this.decodeItem();

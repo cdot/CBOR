@@ -42,7 +42,6 @@ class MemoryInStream extends DataInStream {
       if (!(data.buffer
             && typeof data.byteLength === "number"
             && typeof data.byteOffset == "number")) {
-        console.log(data);
         throw Error("MemoryInStream: data unusable");
       }
 
@@ -144,6 +143,6 @@ class MemoryInStream extends DataInStream {
     this.readPos += length;
     return val;
   }
-};
+}
 
-export { MemoryInStream };
+export { MemoryInStream }
