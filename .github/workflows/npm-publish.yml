@@ -14,10 +14,9 @@ jobs:
           node-version: 16
       - run: npm install
       - run: npm test
-      - run: |
-        npx webpack -c webpack/amd.js
-        npx webpack -c webpack/cjs.js
-        npx webpack -c webpack/mjs.js
+      - run: npx webpack -c webpack/amd.js
+      - run: npx webpack -c webpack/cjs.js
+      - run: npx webpack -c webpack/mjs.js
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{secrets.NPM_TOKEN}}
