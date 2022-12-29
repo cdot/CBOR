@@ -19,7 +19,7 @@ not the primary intention. It's a lot lighter than [cbor-x](https://github.com/k
 ## Installation
 Install it using:
 ```
-$ npm install git+https://github.com/cdot/CBOR
+$ npm install @cdot/cbor
 ```
 ## Usage
 If you are just using it to save/restore simple data structures,
