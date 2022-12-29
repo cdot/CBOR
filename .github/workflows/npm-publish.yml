@@ -1,4 +1,4 @@
-# This workflow willpublish a package to Gnpm when a release is created
+# This workflow will run tests and publish a package to npm when a release is created
 
 name: Publish to npm
 
@@ -14,6 +14,10 @@ jobs:
           node-version: 16
       - run: npm install
       - run: npm test
+      - run: |
+        npx webpack -c webpack/amd.js
+        npx webpack -c webpack/cjs.js
+        npx webpack -c webpack/mjs.js
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{secrets.NPM_TOKEN}}
