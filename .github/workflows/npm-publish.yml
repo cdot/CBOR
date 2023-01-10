@@ -1,8 +1,12 @@
-# This workflow will run tests and publish a package to npm when a release is created
+# This workflow will run tests and publish a package to npm when a
+# push to main happens
 
 name: Publish to npm
 
-on: push
+on:
+  push:
+    branches:
+      - "main"
 
 jobs:
   publish-npm:

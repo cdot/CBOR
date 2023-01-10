@@ -119,13 +119,18 @@ const KeyDictionaryHandler = superclass => class extends superclass {
    */
   finishDecoding(decoder, data) {
     super.finishDecoding(decoder, data);
-    // Get the key dict
-    this.i2k_added = decoder.decodeItem();
-    /* istanbul ignore if */
-    if (this.options.debug)
-      this.options.debug(`Read ${this.i2k_added.length} added keys`);
-    // remap all keys. i2k_added is contiguous after i2k
-    remapKeys(data, [ ...this.i2k, ...this.i2k_added ]);
+    // Get the added key dict. Some early versions of this module generated
+    // output with no key dict, so handle that with a try-catch
+    try {
+      this.i2k_added = decoder.decodeItem();
+      /* istanbul ignore if */
+      if (this.options.debug)
+        this.options.debug(`Read ${this.i2k_added.length} added keys`);
+      // remap all keys. i2k_added is contiguous after i2k
+      remapKeys(data, [ ...this.i2k, ...this.i2k_added ]);
+    } catch (e) {
+      remapKeys(data, this.i2k);
+    }
   }
 
   /**

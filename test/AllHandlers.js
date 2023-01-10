@@ -108,5 +108,36 @@ describe("All handlers", () => {
   it("IDREFHandler, TypeMapHandler, KeyDictionaryHandler", () => {
     makeTagger(IDREFHandler, TypeMapHandler, KeyDictionaryHandler);
   });
+
+  it("all keys known", () => {
+    const A = {
+      Aardvaark: "a", Budgerigar: "b", Crocodile: "c"
+    };
+    const ABC = {
+      Aardvaark: A,
+      Budgerigar: {
+        Aardvaark: "A", Budgerigar: "B", Crocodile: "C"
+      },
+      Crocodile: {
+        Aardvaark: "v",
+        Budgerigar: "r",
+        Crocodile:  [
+          { Aardvaark: A },
+          { Budgerigar: A },
+          { Crocodile: A, Aardvaark: "A" }
+        ]
+      }
+    };
+
+    const tagger = new (KeyDictionaryHandler(
+      IDREFHandler(TypeMapHandler(TagHandler))))({
+        added: k => { throw Error(k) },
+        keys: [ "Aardvaark", "Budgerigar", "Crocodile" ]
+      });
+
+    const frozen = Encoder.encode(ABC, tagger);
+    const thawed = Decoder.decode(frozen, tagger);
+    assert.deepEqual(thawed, ABC);
+  });
 });
          
