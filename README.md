@@ -1,4 +1,5 @@
 # CBOR
+
 [CBOR](http://cbor.io/) library with pluggable tag handlers.
 
 There are several CBOR implementations available from npm and github. This
@@ -17,11 +18,14 @@ not the primary intention. It's a lot lighter than [cbor-x](https://github.com/k
 * Well documented, clearly structured Javascript
 
 ## Installation
+
 Install it using:
 ```
 $ npm install @cdot/cbor
 ```
+
 ## Usage
+
 If you are just using it to save/restore simple data structures,
 with no requirement for data size optimisation, use it as follows.
 
@@ -38,31 +42,40 @@ const decoded = CBOR.Decoder.decode(frozen);
 `frozen` can be a `DataView`, a `TypedArray`, or an `ArrayBuffer`.
 
 ### ESM
+
 ```
 import { Encoder, Decoder } from "@cdot/cbor";
 const frozen = Encoder.encode(data);
 ```
+
 ### CommonJS
+
 ```
 const { Encoder, Decoder } = require("@cdot/cbor");
 const frozen = Encoder.encode(data);
 ```
+
 ## AMD
+
 ```
 require(["@cdot/cbor"], CBOR => {
    const frozen = CBOR.Encoder.encode(data);
 });
 ```
+
 ## Browser
+
 ```
 <script type="text/javascript" src="./node_modules/@cdot/cbor/dist/index.js"></script>
     <script>
       const frozen = CBOR.Encoder.encode(data);
     </script>
 ```
+
 ## Tags
+
 CBOR uses the concept of "tags", user-defined extension points to the protocol.
-Included are a number of handlers that define some useful behaviurs.
+Included are a number of handlers that define some useful behaviours.
 
 We use subclass factories to implement handlers as mixins, as described [here](https://justinfagnani.com/2015/12/21/real-mixins-with-javascript-classes/). This lets you easily use multiple tag handlers. For example:
 ```
@@ -74,6 +87,7 @@ the same parameters to the handlers used to encode and decode the data
 (though there are exceptions to this).
 
 ## IDREFHandler
+
 Optimises the output by never saving the same structure twice. For example, you might have the following:
 ```
 const simple = { ... };
@@ -82,7 +96,7 @@ const complex = { once: simple, twice: simple };
 The basic encoder will write two copies of `simple` to the output.
 If instead we use the IDREF handler:
 ```
-const handler = new IDREFHandler(TagHandler)();
+const handler = new (IDREFHandler(TagHandler))();
 const frozen = CBOR.Encoder.encode(complex, handler);
 ...
 const decoded = CBOR.Decoder.decode(frozen, handler);
@@ -90,9 +104,11 @@ const decoded = CBOR.Decoder.decode(frozen, handler);
 ```
 The handler will now spot the double-reference to `simple` and only write
 it once, and the decoder will restore the original data structure. The
-handler also supports self-referential structures.
+handler also supports self-referential structures (without it, these will
+break).
 
 ## TypeMapHandler
+
 Lets you record complex types (classes) in the output data. For example:
 ```
 class Thing {
@@ -107,7 +123,7 @@ will get back:
 ```
 i.e. the prototype `Thing` will be lost. If instead we write:
 ```
-const handler = new TypeMapHandler(TagHandler)({
+const handler = new (TypeMapHandler(TagHandler))({
     typeMap: { Thing: Thing }
 });
 const frozen = CBOR.Encoder.encode(data, handler);
@@ -117,41 +133,62 @@ const decoded = CBOR.Decoder.decode(frozen, handler);
 when this is decoded using the same tag handler, the original
 prototype will be restored.
 
-Note that instances of subclasses of a class mentioned in the type map will be
-regenerated according to the type map used with the decoder. So it's possible to
-change the class of an object thus:
+The keys in the type map let the encoder determine the prototypes you
+want to remember. When an object is serialised, the prototype chain of
+that object is followed to see if the constructor name is in the type
+map. During encoding, only the keys in the type map are important, the
+values are ignored. During decoding, the values are the class that the
+object will be instantiated as. During instantiation of a class in the
+decoder, the constructor will be called with no parameters and the
+attributes written into the instance after construction.
+
+Note that instances of subclasses of a class mentioned in the type map
+will be regenerated according to the type map used with the decoder. So
+it's possible to change the class of an object thus:
 ```
 class Thing { ... }
-class subThing extends Thing { ... }
-const data = new subThing();
-const outhandler = new TypeMapHandler(TagHandler)({
+class SubThing extends Thing { ... }
+const data = new SubThing();
+const outhandler = new (TypeMapHandler(TagHandler))({
     // Save all subclasses of 'Thing' as class 'Thing'
     typeMap: { Thing: Thing }
 });
 const frozen = CBOR.Encoder.encode(data, outhandler);
 ...
-class newThing extends Thing { ... }
-const inhandler = new TypeMapHandler(TagHandler)({
-    // Map all saved 'Thing's to 'newThing'
-    typeMap: { Thing: newThing }
+class NewThing extends Thing { ... }
+const inhandler = new (TypeMapHandler(TagHandler))({
+    // Map all saved 'Thing's to 'NewThing's
+    typeMap: { Thing: NewThing }
 });
 const decoded = CBOR.Decoder.decode(frozen, inhandler);
 ```
-`decoded` will now be an instance of class `newThing` with all the same
+`decoded` will now be an instance of class `NewThing` with all the same
 attributes as the original `data` (including any additional attributes
-added when it was a `subThing`).
+added when it was a `SubThing`).
+
+You *must* add all complex types that you want to restore to the `typeMap`.
+If you miss a class, then objects of that type will be saved as a simple
+data object.
 
 Note that if you want to use both the `IDREFHandler` and the `TypeMapHandler`
 then you MUST include the `IDREFHandler` in the prototype chain first, thus:
 ```
-const inhandler = new IDREFHandler(TypeMapHandler(TagHandler)(...));
+const inhandler = new (IDREFHandler(TypeMapHandler(TagHandler)))(...);
 ```
 This will NOT work:
 ```
-const inhandler = new TypeMapHandler(IDREFHandler(TagHandler)(...));
+const handler = new (TypeMapHandler(IDREFHandler(TagHandler))(...);
 ```
 
+If the encoded output is still too big because of type names being encoded as
+string literals, you can pass the `mapClassNames` option to the encoding handler to enable encoding class names as numbers. This comes at a performance cost, of course!
+```
+const outhandler = new (TypeMapHandler(TagHandler))({ mapClassNames: true });
+```
+The decoder doesn't have to have the option.
+
 ## KeyDictionaryHandler
+
 If you are saving lots of data structures that are the same, then the basic
 encoder will save all the attribute names for each instance saved. So if you
 have a structure like this:
@@ -194,5 +231,7 @@ new handler, please ensure you provide a mocha test for it and test the
 interaction with the other handlers.
 
 ## Streams
-You can also use the encoder and decoder on streams. See the code documentation
+
+You can also use the encoder and decoder on streams by wrapping the stream
+with a subclass of `DataInStream`/`DataOutStream`. See the code documentation
 for details.

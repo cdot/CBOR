@@ -1,21 +1,24 @@
 /*Copyright (C) 2022 Crawford Currie http://c-dot.co.uk*/
+/* eslint-disable no-unused-vars */
 
 /**
  * Base class for tag handler objects passed to CBOR for encode/decode.
- * During encoding, the tagger `encode()` method is called on every
- * key-value object. The tagger function can decide whether to generate
+ * During encoding, the tag handler's `encode()` method is called on every
+ * key-value object. The encode method can decide whether to generate
  * a tag to indicate special semantics for the object, or even replace
  * it completely.
  *
- * See the CBOR specification for information about tagging.
+ * See the [CBOR specification](https://www.rfc-editor.org/rfc/rfc8949.html)
+ * for information about tagging.
  *
- * The CBOR directory contains a number of mixins that enhance the
- * functionality here with support for different tags.
+ * The actual tag handler implementation used is determined by mixing in
+ * specific functionality to this object. Examples of usage are given in
+ * the README at the root of this package.
  */
 class TagHandler {
 
-  constructor(options) {
-    this.options = options || {};
+  constructor(options = {}) {
+    this.options = options;
   }
 
   /**
@@ -28,22 +31,24 @@ class TagHandler {
    * encoding to the object, then return the object. Otherwise if the
    * object is fully encoded by the tagger, return undefined.
    * @param {object} value object that may need to be tagged
-   * @param {Encoder} cbor the encoder that is doing the encoding.
+   * @param {Encoder} encoder the encoder that is doing the encoding.
    * @return {object} object that needs to be serialised after this
    * tag has been processed, or undefined if sufficient has been
    * written by the tag handler to fully encode the value.
    */
-  encode(value, cbor) { return value; }
+  encode(value, encoder) { return value; }
 
   /**
    * Decode a tag. The decoding of the tag and it's data must exactly
    * mirror the encoding.
    * @param {number} tag the tag ID.
-   * @param {Decoder} cbor the decoder invoking the tagger.
+   * @param {Decoder} decoder the decoder invoking the tagger.
    * @return {object?} return the thawed object, or undefined if the
-   * tag was not handled by the tag handler.
+   * following data was not consumed by the tag handler. If undefined is
+   * returned, the Decoder will try to decodeItem the following data - which
+   * is fine unless you want to keep that data in the handler.
    */
-  decode(tag, cbor) { return undefined; }
+  decode(tag, decoder) { return undefined; }
 
   /**
    * Called by {@linkcode Encoder} at the start of encoding.
@@ -58,11 +63,18 @@ class TagHandler {
   finishEncoding(encoder) {}
 
   /**
+   * Called by {@linkcode Decoder} at the start of decoding.
+   * @param {Decoder} encoder the decoder
+   */
+  startDecoding(encoder) {}
+
+  /**
    * Called by {@linkcode Decoder} at the end of decoding.
    * @param {Decoder} decoder the decoder
    * @param {object} data the decoded data
+   * @return {object} the data after any post-decoding cleanup
    */
-  finishDecoding(encoder, data) {}
+  finishDecoding(encoder, data) { return data; }
 
   /**
    * When reading from a stream, there may be tags that apply to
@@ -82,7 +94,12 @@ class TagHandler {
    * @return {object} a new simple object
    */
   createObject(decoder, proto) {
-    return proto ? Object.create(proto) : {};
+    if (proto) {
+      let obj = Object.create(proto);
+      decoder.debug("Instantiating", proto, "->", obj);
+      return obj;
+    }
+    return {};
   }
 
   /**
@@ -110,4 +127,4 @@ class TagHandler {
   decodeKey(id, decoder) { return id; }
 }
 
-export { TagHandler }
+export default TagHandler;

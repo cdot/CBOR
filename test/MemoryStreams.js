@@ -1,7 +1,7 @@
 /* eslint-env node, mocha, browser */
 
-import { MemoryInStream } from "../src/MemoryInStream.js";
-import { MemoryOutStream } from "../src/MemoryOutStream.js";
+import MemoryInStream from "../src/MemoryInStream.js";
+import MemoryOutStream from "../src/MemoryOutStream.js";
 
 describe("Memory streams", () => {
 
@@ -37,6 +37,7 @@ describe("Memory streams", () => {
     assert.equal(ins.peekUint8(), MAX);
     assert.equal(ins.readUint8(), MAX);
     assert.equal(ins.readPos, a.byteLength);
+    assert(ins.exhausted());
   });
 
   it("Uint16", () => {
@@ -63,6 +64,7 @@ describe("Memory streams", () => {
     assert.equal(ins.readUint32(), 0);
     assert.equal(ins.readUint32(), MAX);
     assert.equal(ins.readPos, a.byteLength);
+    assert(ins.exhausted());
   });
 
   it("Uint64", () => {
@@ -75,6 +77,7 @@ describe("Memory streams", () => {
     assert.equal(ins.readUint64(), 0);
     assert.equal(ins.readUint64(), MAX);
     assert.equal(ins.readPos, a.byteLength);
+    assert(ins.exhausted());
   });
 
   // Float 16 is not supported.
@@ -94,6 +97,7 @@ describe("Memory streams", () => {
     assert.equal(ins.readFloat32(), SMALL);
     assert.equal(ins.readFloat32(), -SMALL);
     assert.equal(ins.readPos, a.byteLength);
+    assert(ins.exhausted());
   });
 
   it("Float64", () => {
@@ -107,6 +111,7 @@ describe("Memory streams", () => {
     assert.equal(ins.readFloat64(), MIN);
     assert.equal(ins.readFloat64(), MAX);
     assert.equal(ins.readPos, a.byteLength);
+    assert(ins.exhausted());
   });
 
   it("byte array", () => {
@@ -119,5 +124,6 @@ describe("Memory streams", () => {
     const ins = new MemoryInStream(a);
     assert.deepEqual(ins.readUint8Array(bytes.byteLength), bytes);
     assert.deepEqual(ins.readUint8Array(empty.byteLength), empty);
+    assert(ins.exhausted());
   });
 });

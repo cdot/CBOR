@@ -30,11 +30,14 @@
 	},
 	"license": "MIT",
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
 		"c8": "^7.12.0",
 		"chai": "^4.3.7",
 		"docdash": "^2.0.0",
-		"eslint": ">=8.30.0",
+		"eslint": "^10.0.3",
+		"eslint-formatter-unix": "^9.0.1",
 		"esprima": "^4.0.1",
+		"globals": "^17.4.0",
 		"jsdoc": "^4.0.0",
 		"marked": "^4.2.4",
 		"mocha": "^10.2.0",
@@ -49,44 +52,5 @@
 		"test": "mocha test",
 		"coverage": "NODE_ENV=test c8 mocha test",
 		"update": "ncu -u "
-	},
-  "eslintConfig": {
-		"extends": "eslint:recommended",
-		"parserOptions": {
-			"sourceType": "module"
-		},
-		"env": {
-			"shared-node-browser": true,
-		    "es2022": true
-		},
-		"rules": {
-			"camelcase": 0,
-			"curly": 0,
-			"dot-notation": 1,
-			"new-cap": 0,
-			"no-alert": 0,
-			"no-console": 1,
-			"no-debugger": 0,
-			"no-eval": 0,
-			"no-fallthrough": 0,
-			"no-global-assign": 0,
-			"no-loop-func": 1,
-			"no-mixed-spaces-and-tabs": 0,
-			"no-new": 0,
-			"no-prototype-builtins": 0,
-			"no-redeclare": [
-				"error",
-				{
-					"builtinGlobals": false
-				}
-			],
-			"no-trailing-spaces": 1,
-			"no-underscore-dangle": 0,
-			"no-unused-vars": 0,
-			"no-useless-escape": 1,
-			"no-use-before-define": 0,
-			"quotes": 0,
-			"strict": 0
-		}
 	}
 }

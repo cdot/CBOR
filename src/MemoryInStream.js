@@ -2,14 +2,14 @@
   License MIT. See README.md at the root of this distribution for full copyright
   and license information.*/
 
-import { DataInStream } from "./DataInStream.js";
+import DataInStream from "./DataInStream.js";
 
 const POW_2_24 = 5.960464477539063e-8;
 const POW_2_32 = 2 ** 32;
 
 /**
  * Impementation of DataInStream for use with CBOR.
- * Reads from a Uin88Array.
+ * Reads from a Uint8Array.
  * @implements DataInStream
  */
 class MemoryInStream extends DataInStream {
@@ -143,6 +143,13 @@ class MemoryInStream extends DataInStream {
     this.readPos += length;
     return val;
   }
+
+  /**
+   * @override
+   */
+  exhausted() {
+    return this.readPos >= this.view.byteLength;
+  }
 }
 
-export { MemoryInStream }
+export default MemoryInStream;

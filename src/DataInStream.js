@@ -2,9 +2,6 @@
   License MIT. See README.md at the root of this distribution for full copyright
   and license information.*/
 
-const POW_2_24 = 5.960464477539063e-8;
-const POW_2_32 = 2 ** 32;
-
 /**
  * Base class of data streams for use with CBOR.
  * @interface
@@ -80,7 +77,7 @@ class DataInStream {
    * @return {Uint8Array} the data read
    */
   readUint8Array(length) {
-    throw Error("DataInStream.readUint8Array");
+    throw Error(`DataInStream.readUint8Array(${length})`);
   }
 
   /* istanbul ignore next */
@@ -107,6 +104,14 @@ class DataInStream {
   set mark(m) {
     throw Error("DataInStream.set mark");
   }
+
+  /**
+   * True if the stream is exhausted (all read)
+   * @return {boolean} true if the stream is exhausted
+   */
+  exhausted() {
+    throw Error("DataInStream.exhausted");
+  }
 }
 
-export { DataInStream }
+export default DataInStream;

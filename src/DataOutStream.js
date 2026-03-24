@@ -14,7 +14,7 @@ class DataOutStream {
    * @param {number} value number to write
    */
   writeUint8(value) {
-    throw Error("DataStream.writeUint8");
+    throw Error(`DataStream.writeUint8(${value}`);
   }
 
   /* istanbul ignore next */
@@ -23,7 +23,7 @@ class DataOutStream {
    * @param {number} value number to write
    */
   writeUint16(value) {
-    throw Error("DataStream.writeUint16");
+    throw Error(`DataStream.writeUint16(${value})`);
   }
 
   /* istanbul ignore next */
@@ -32,7 +32,7 @@ class DataOutStream {
    * @param {number} value number to write
    */
   writeUint32(value) {
-    throw Error("DataStream.writeUint32");
+    throw Error(`DataStream.writeUint32(${value})`);
   }
 
   /* istanbul ignore next */
@@ -41,7 +41,7 @@ class DataOutStream {
    * @param {number} value number to write
    */
   writeUint64(value) {
-    throw Error("DataStream.writeUint64");
+    throw Error(`DataStream.writeUint64${value}`);
   }
 
   /* istanbul ignore next */
@@ -50,7 +50,7 @@ class DataOutStream {
    * @param {number} value number to write
    */
   writeFloat32(value) {
-    throw Error("DataStream.writeFloat32");
+    throw Error(`DataStream.writeFloat32${value}`);
   }
 
   /* istanbul ignore next */
@@ -59,7 +59,7 @@ class DataOutStream {
    * @param {number} value number to write
    */
   writeFloat64(value) {
-    throw Error("DataStream.writeFloat64");
+    throw Error(`DataStream.writeFloat64${value}`);
   }
 
   /* istanbul ignore next */
@@ -73,5 +73,5 @@ class DataOutStream {
   }
 }
 
-export { DataOutStream };
+export default DataOutStream;
 

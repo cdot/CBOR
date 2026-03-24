@@ -11,14 +11,13 @@ const CBOR_REF  = 25442;
 const CBOR_ID   = 25444;
 
 /**
- * CBOR tag handler mixin. Uses IDs to refer to previously serialised objects,
+ * TagHandler mixin. Uses IDs to refer to previously serialised objects,
  * so they don't get serialised again.
  * Adds two CBOR tags:
  * * 25442 - CBOR_REF - reference to a previously serialised object
  * * 25444 - CBOR_ID - tag an object that might be referenced
- * NOTE: When using in conjunction with TypeMapMixin, this
- * mixin must always be a sublass of TypeMapMixin (come before
- * it in the mixins order)
+ * NOTE: When using in conjunction with TypeMapHandler, this
+ * mixin must always be a sublass of TypeMapHandler.
  * @mixin IDREFHandler
  */
 const IDREFHandler = superclass => class IDREFHandler extends superclass {
@@ -56,8 +55,8 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
    * @memberof IDREFHandler
    */
   finishDecoding(decoder, data) {
-    super.finishDecoding(decoder, data);
     this.objectsThawed = {};
+    return super.finishDecoding(decoder, data);
   }
 
   /**
@@ -79,7 +78,7 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
    */
   encode(value, encoder) {
     if (typeof value === "object") {
-      //if (encoder.debug) encoder.debug("Checking", value);
+      //encoder.debug("Checking", value);
       if (typeof value[IB_ID] !== "undefined") {
         // Reference to previously frozen object
         encoder.writeTag(CBOR_REF);
@@ -110,13 +109,13 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
       // be created by one of createArray or createObject)
       this.currentID = id = decoder.decodeItem();
       /* istanbul ignore if */
-      if (decoder.debug) decoder.debug("\tIDREF: ID=", id);
+      decoder.debug("\tIDREF: ID=", id);
       return decoder.decodeItem();
 
     case CBOR_REF:
       ref = decoder.decodeItem();
       /* istanbul ignore if */
-      if (decoder.debug) decoder.debug("\tIDREF: REF to", ref);
+      decoder.debug("\tIDREF: REF to", ref);
       /* istanbul ignore if */
       if (!this.objectsThawed[ref])
         throw Error(`Reference to unthawed ${ref}`);
@@ -136,7 +135,7 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
     if (typeof this.currentID !== "undefined") {
       this.objectsThawed[this.currentID] = ret;
       /* istanbul ignore if */
-      if (decoder.debug) decoder.debug("\tIDREF: created []", this.currentID);
+      decoder.debug("\tIDREF: created []", this.currentID);
       this.currentID = undefined;
     }
     return ret;
@@ -152,11 +151,11 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
     if (typeof this.currentID !== "undefined") {
       this.objectsThawed[this.currentID] = ret;
       /* istanbul ignore if */
-      if (decoder.debug) decoder.debug("\tIDREF: created {}", this.currentID);
+      decoder.debug("\tIDREF: created {}", this.currentID);
       this.currentID = undefined;
     }
     return ret;
   }
 };
 
-export { IDREFHandler }
+export default IDREFHandler;

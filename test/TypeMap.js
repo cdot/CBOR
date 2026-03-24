@@ -1,11 +1,11 @@
 /* eslint-env node, mocha */
 
-import { MemoryInStream } from "../src/MemoryInStream.js";
-import { MemoryOutStream } from "../src/MemoryOutStream.js";
-import { Encoder } from "../src/Encoder.js";
-import { Decoder } from "../src/Decoder.js";
-import { TypeMapHandler } from "../src/TypeMapHandler.js";
-import { TagHandler } from "../src/TagHandler.js";
+import MemoryInStream from "../src/MemoryInStream.js";
+import MemoryOutStream from "../src/MemoryOutStream.js";
+import Encoder from "../src/Encoder.js";
+import Decoder from "../src/Decoder.js";
+import TypeMapHandler from "../src/TypeMapHandler.js";
+import TagHandler from "../src/TagHandler.js";
 
 describe("TypeMap", () => {
 
@@ -26,100 +26,206 @@ describe("TypeMap", () => {
     }
   });
 
-  it("instance-ref", () => {
+  function UNit() {}
 
-    class Wibble {
-      strap = "original";
-      strop() { return "blah"; }
-    }
-    const frood = new Wibble('frood1');
-    frood.strap = "modified";
-    const simple = {
-      obj1: frood,
-      obj2: frood,
-      obj3: new Wibble('not frood')
+  function superSimple(opts) {
+    return () => {
+      class Simple {
+        data = "simple_data";
+        constructor(name = "simple_name") {
+          this.name = name;
+        }
+        func() { return "simple_func"; }
+      }
+
+      const simple = new Simple();
+
+      const tagger = new (TypeMapHandler(TagHandler))(opts);
+      const frozen = Encoder.encode(simple, tagger);
+      //console.debug(frozen.length);
+      const thawed = Decoder.decode(frozen, tagger);
+      assert.deepEqual(thawed, simple);
     };
-    const tagger = new (TypeMapHandler(TagHandler))({
-      typeMap: { Wibble: Wibble }
-    });
+  }
 
-    const frozen = Encoder.encode(simple, tagger);
-    const thawed = Decoder.decode(frozen, tagger);
+  it("super simple", superSimple());
+  it("super simple with mapClassNames", superSimple({mapClassNames:true}));
 
-    assert(thawed.obj1 instanceof Wibble);
-    assert(thawed.obj2 instanceof Wibble);
-    assert(thawed.obj3 instanceof Wibble);
-    assert.deepEqual(thawed, simple);
-  });
+  function remap(opts = {}) {
+    return () => {
+      class Wibble {
+        data = "wibble";
+        constructor(name) {
+          this.name = name;
+        }
+        func() { return "wibble"; }
+      }
 
-  it("simple mixins", () => {
-    class Gibber {
-      constructor() {}
-      obj() { return true; }
-    }
-    // add a mixin
-    const mix = {
-      mixin() { return true; }
+      const modified_wibble = new Wibble('modified_wibble');
+      modified_wibble.data = "data_wibble";
+
+      const simple = {
+        mod: modified_wibble,
+        mod_again: modified_wibble,
+        simple: new Wibble('simple Wibble')
+      };
+
+      class Bobble {
+        // should inherit data
+        constructor(name) {
+          this.name = name;
+        }
+        func() { return "bobble"; }
+      };
+
+      opts.typeMap = { Wibble: Bobble };
+      const tagger = new (TypeMapHandler(TagHandler))(opts);
+
+      const frozen = Encoder.encode(simple, tagger);
+      //console.debug(frozen.length);
+      const thawed = Decoder.decode(frozen, tagger);
+      assert(thawed.simple instanceof Bobble);
+      assert.equal(thawed.simple.name, "simple Wibble");
+      assert.equal(thawed.simple.data, "wibble");
+
+      assert(thawed.mod instanceof Bobble);
+      assert.equal(thawed.mod.name, "modified_wibble");
+      assert.equal(thawed.mod.data, "data_wibble");
+      assert.deepEqual(thawed.mod_again, thawed.mod);
     };
-    Object.assign(Gibber.prototype, mix);
+  };
 
-    const tagger = new (TypeMapHandler(TagHandler))({
-      typeMap: { Gibber: Gibber }});
+  it("remap", remap({}));
+  it("remap with mapClassNames", remap({ mapClassNames: true }));
+  
+  function unencodableClassName(opts = {}) {
+    return () => {
+      class _Wibble {
+        strap = "original";
+        strop() { return "blah"; }
+      }
+      const frood = new _Wibble('frood1');
+      frood.strap = "modified";
+      const simple = {
+        obj1: frood,
+        obj2: frood,
+        obj3: new _Wibble('not frood')
+      };
+      opts.typeMap = { _Wibble: _Wibble };
+      const tagger = new (TypeMapHandler(TagHandler))(opts);
 
-    const mixedup = new Gibber();
-    assert(mixedup.obj());
-    assert(mixedup.mixin());
-    
-    const frozen = Encoder.encode(mixedup, tagger);
-    const thawed = Decoder.decode(frozen, tagger);
-
-    assert(thawed.obj());
-    assert(thawed.mixin());
-  });
-
-  it("wrapping mixins", () => {
-    class A {
-      a = "A";
-      A() { return "A"; }
-    }
-
-    const mixin = superclass => class B extends superclass {
-      b = "B";
-      B() { return "B"; }
+      const frozen = Encoder.encode(simple, tagger);
+      //console.debug(frozen.length);
+      const thawed = Decoder.decode(frozen, tagger);
+      assert(thawed.obj1 instanceof _Wibble);
+      assert(thawed.obj2 instanceof _Wibble);
+      assert(thawed.obj3 instanceof _Wibble);
+      assert.deepEqual(thawed, simple);
     };
+  }
 
-    class C extends mixin(A) {
-      c = "C";
-      C() { return "C"; }
-    }
+  it("unencodeable class name", unencodableClassName());
+  it("unencodeable class name, mapClassNames", unencodableClassName({mapClassNames:true}));
+  
+  function simpleMixins(opts = {}) {
+    return () => {
+      class Gibber {
+        constructor() {}
+        obj() { return true; }
+      }
+      // add a mixin
+      const mix = {
+        mixin() { return true; }
+      };
+      Object.assign(Gibber.prototype, mix);
 
-    const mixedup = new C();
-    assert.equal(mixedup.A(), "A");
-    assert.equal(mixedup.B(), "B");
-    assert.equal(mixedup.C(), "C");
+      opts.typeMap = { Gibber: Gibber };
+      const tagger = new (TypeMapHandler(TagHandler))(opts);
 
-    // Because C is missing from the typeMap, mixedup will be
-    // serialised with the mixin class "B". To deserialise we
-    // have to map serialised object of class B to the original class
-    // C
+      const mixedup = new Gibber();
+      assert(mixedup.obj());
+      assert(mixedup.mixin());
+      
+      const frozen = Encoder.encode(mixedup, tagger);
+      //console.debug(frozen.length);
+      const thawed = Decoder.decode(frozen, tagger);
 
-    const inTag = new (TypeMapHandler(TagHandler))({
-      typeMap: { B: A }});
-    const frozen = Encoder.encode(mixedup, inTag);
+      assert(thawed.obj());
+      assert(thawed.mixin());
+    };
+  }
+  it("simple mixins", simpleMixins());
+  it("simple mixins, map class names", simpleMixins({mapClassNames:true}));
 
-    const outTag = new (TypeMapHandler(TagHandler))({
-      typeMap: { B: C }});
-    const thawed = Decoder.decode(frozen, outTag);
+  function wrappingMixins(opts = {}) {
+    return () => {
+      class Anemone {
+        a = "Anemone";
+        A() { return "Anemone"; }
+      }
 
-    assert(thawed instanceof A);
-    // B is not defined, it's a mixin
-    assert(thawed instanceof C);
+      const mixin = superclass => class Bryozoan extends superclass {
+        b = "Bryozoan";
+        B() { return "Bryozoan"; }
+      };
 
-    assert.equal(thawed.a, "A");
-    assert.equal(thawed.A(), "A");
-    assert.equal(thawed.b, "B");
-    assert.equal(thawed.B(), "B");
-    assert.equal(thawed.c, "C");
-    assert.equal(thawed.C(), "C");
-  });
+      class Cnidarian extends mixin(Anemone) {
+        c = "Cnidarian";
+        C() { return "Cnidarian"; }
+      }
+
+      const mixedup = new Cnidarian();
+      assert.equal(mixedup.A(), "Anemone");
+      assert.equal(mixedup.B(), "Bryozoan");
+      assert.equal(mixedup.C(), "Cnidarian");
+
+      // Because Cnidarian is missing from the encoding typeMap, mixedup
+      // will be serialised with the mixin class Bryozoan.
+
+      opts.typeMap = { Bryozoan: Anemone };
+      const inTag = new (TypeMapHandler(TagHandler))(opts);
+      const frozen = Encoder.encode(mixedup, inTag/*, //console.debug*/);
+      //console.debug(frozen.length);
+      // To deserialise accurately we have to map a serialised object
+      // of class Bryozoan to the original class Cnidarian.
+      opts.typeMap = { Bryozoan: Cnidarian };
+      const outTag = new (TypeMapHandler(TagHandler))(opts);
+      const thawed = Decoder.decode(frozen, outTag/*, console.debug*/);
+      //console.debug(thawed);
+      assert(thawed instanceof Anemone);
+      // Bryozoan is not defined, it's a mixin
+      assert(thawed instanceof Cnidarian);
+
+      assert.equal(thawed.a, "Anemone");
+      assert.equal(thawed.A(), "Anemone");
+      assert.equal(thawed.b, "Bryozoan");
+      assert.equal(thawed.B(), "Bryozoan");
+      assert.equal(thawed.c, "Cnidarian");
+      assert.equal(thawed.C(), "Cnidarian");
+    };
+  }
+  it("wrapping mixins", wrappingMixins());
+  it("wrapping mixins, map class names", wrappingMixins({mapClassNames:true}));
+
+  function bigArray(opts = {}) {
+    return () => {
+      class EnormouslyLongName {
+        constructor(i) {
+          this.value = i;
+        }
+      };
+      opts.typeMap = { EnormouslyLongName: EnormouslyLongName };
+      const data = [];
+      for (let i = 0; i < 10000; i++)
+        data[i] = new EnormouslyLongName(i);
+      const tagger = new (TypeMapHandler(TagHandler))(opts);
+      const frozen = Encoder.encode(data, tagger/*, console.debug*/);
+      //console.debug(frozen.length);
+      const thawed = Decoder.decode(frozen, tagger);
+      assert.deepEqual(data, thawed);
+    };
+  }
+
+  it("big array", bigArray());
+  it("big array, map class names", bigArray({mapClassNames:true}));
 });

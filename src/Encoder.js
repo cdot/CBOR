@@ -3,8 +3,8 @@
  * This version Copyright (C) 2022 Crawford Currie
  */
 
-import { TagHandler } from "./TagHandler.js";
-import { MemoryOutStream } from "./MemoryOutStream.js";
+import TagHandler from "./TagHandler.js";
+import MemoryOutStream from "./MemoryOutStream.js";
 
 const POW_2_53 = 2 ** 53;
 
@@ -34,6 +34,12 @@ class Encoder {
      * @private
      */
     this.tagger = tagger || new TagHandler();
+
+    /**
+     * Debug print
+     * @member {TagHandler}
+     */
+    this.debug = () => {};
   }
 
   /**
@@ -75,7 +81,6 @@ class Encoder {
   /**
    * Write a Javascript object of any type.
    * For use by {@linkcode TagHandler} implementations only.
-   * @private
    * @param {number} id tag to write
    */
   encodeItem(value) {
@@ -199,9 +204,10 @@ class Encoder {
    * Encode a value as CBOR.
    * @param {object} value value to encode
    * @param {TagHandler?} optional tag handler
+   * @param {function?} debug debug print function
    * @return {Uint8Array} the encoded data
    */
-  static encode(value, handler, debug) {
+  static encode(value, handler, debug = (() => {})) {
     const outs = new MemoryOutStream();
     const encoder = new Encoder(outs, handler);
     encoder.debug = debug;
@@ -210,5 +216,5 @@ class Encoder {
   }
 }
 
-export { Encoder };
+export default Encoder;
 

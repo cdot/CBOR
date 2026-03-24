@@ -7,10 +7,8 @@
  * CBOR specification is at https://www.rfc-editor.org/rfc/rfc8949.html
  */
 
-/* global TypedArray */
-
-import { TagHandler } from "./TagHandler.js";
-import { MemoryInStream } from "./MemoryInStream.js";
+import TagHandler from "./TagHandler.js";
+import MemoryInStream from "./MemoryInStream.js";
 
 /**
  * Decoder for objects encoded according to the CBOR specification.
@@ -38,6 +36,12 @@ class Decoder {
      * @private
      */
     this.tagHandler = tagHandler || new TagHandler();
+
+    /**
+     * Debug print
+     * @member {TagHandler}
+     */
+    this.debug = () => {};
   }
 
   /**
@@ -109,7 +113,7 @@ class Decoder {
     let fullArrayLength = 0;
     let length;
     while ((length = readChunkLength()) >= 0) {
-      if (this.debug) this.debug(`\tCHUNK ${length} bytes`);
+      this.debug(`\tCHUNK ${length} bytes`);
       fullArrayLength += length;
       elements.push(this.stream.readUint8Array(length));
     }
@@ -175,7 +179,7 @@ class Decoder {
 
   /**
    * Decode the next item on the input stream.
-   * @private
+   * @return {object} the next item
    */
   decodeItem() {
     const initialByte = this.stream.readUint8();
@@ -187,17 +191,17 @@ class Decoder {
 
     case 0: // unsigned integer
       /* istanbul ignore if */
-      if (this.debug) this.debug(`${this.stream.readPos}: UINT ${ai}`);
+      this.debug(`${this.stream.readPos}: UINT ${ai}`);
       return this.readArgument(ai, 0);
 
     case 1: // negative integer
       /* istanbul ignore if */
-      if (this.debug) this.debug(`${this.stream.readPos}: -INT ${ai}`);
+      this.debug(`${this.stream.readPos}: -INT ${ai}`);
       return -1 - this.readArgument(ai, 1);
 
     case 2: // byte string
       /* istanbul ignore if */
-      if (this.debug) this.debug(`${this.stream.readPos}: BYTES ${ai}`);
+      this.debug(`${this.stream.readPos}: BYTES ${ai}`);
       if (ai === 31)
           return this.readIndefiniteBytes(majorType);
       len = this.readArgument(ai, 2);
@@ -208,52 +212,58 @@ class Decoder {
     case 3: // UTF-8 encoded text string
       /* istanbul ignore if */
       if (ai === 0x1f) {
-        if (this.debug) this.debug(`${this.stream.readPos}: TEXT? ${ai}`);
+        this.debug(`${this.stream.readPos}: TEXT? ${ai}`);
         text = new TextDecoder().decode(this.readIndefiniteBytes(majorType));
       } else {
-        if (this.debug) this.debug(`${this.stream.readPos}: TEXT `);
+        this.debug(`${this.stream.readPos}: TEXT `);
         len = this.readArgument(ai, 3);
         if (len < 0)
           throw Error(`Invalid text length ${len}`);
         text = new TextDecoder().decode(this.stream.readUint8Array(len));
       }
-      if (this.debug) this.debug(`\t"${text}"`);
+      this.debug(`\t"${text}"`);
       return text;
 
     case 4: // array of data items
       if (ai === 0x1f) {
         /* istanbul ignore if */
-        if (this.debug) this.debug(`${this.stream.readPos}: ARRAY?`);
+        this.debug(`${this.stream.readPos}: ARRAY?`);
         return this.readIndefiniteItemArray();
       }
       len = this.readArgument(ai, 4);
       if (len < 0)
         throw Error("Invalid array length ${len}");
       /* istanbul ignore if */
-      if (this.debug) this.debug(`${this.stream.readPos}: ARRAY ${len}`);
+      this.debug(`${this.stream.readPos}: ARRAY ${len}`);
       return this.readItemArray(len);
 
     case 5: // map of pairs of data items
       if (ai === 0x1f) {
         /* istanbul ignore if */
-        if (this.debug) this.debug(`${this.stream.readPos}: MAP?`);
+        this.debug(`${this.stream.readPos}: MAP?`);
         return this.readIndefiniteKV();
       }
       len = this.readArgument(ai, 5);
       if (len < 0)
         throw Error("Invalid map length ${len}");
       /* istanbul ignore if */
-      if (this.debug) this.debug(`${this.stream.readPos}: MAP length ${len}`);
+      this.debug(`${this.stream.readPos}: MAP length ${len}`);
       return this.readKV(len);
 
     case 6: // tagged data item
       tag = this.readArgument(ai, 6);
       /* istanbul ignore if */
-      if (this.debug) this.debug(`${this.stream.readPos}: TAG ${tag}`);
+      this.debug(`${this.stream.readPos}: TAG ${tag}`);
 
+      // See if the tag handler wants to handle this tag specially.
+      // If it does, and if it consumes any associated data, it will
+      // return something defined.
       thawed = this.tagHandler.decode(tag, this);
       if (typeof thawed !== "undefined")
         return thawed; // else drop through to read the next item
+
+      if (this.stream.readPos == this.stream.view.byteLength)
+        throw new Error("Didn't expect that");
 
       switch (tag) { // predefined tags, no conversions by default
       case 0: // date/time string
@@ -274,13 +284,12 @@ class Decoder {
       case 55799: break; // self-described CBOR
       }
 
-      // Default to just decoding the following data
       return this.decodeItem();
 
     case 7: // floating point number and values with no content
       // https://www.rfc-editor.org/rfc/rfc8949.html#name-floating-point-numbers-and-
       /* istanbul ignore if */
-      if (this.debug) this.debug(`${this.stream.readPos}: OTHER ${ai}`);
+      this.debug(`${this.stream.readPos}: OTHER ${ai}`);
       switch (ai) {
       case 20:
         return false;
@@ -307,22 +316,31 @@ class Decoder {
   }
 
   /**
-   * Read and decode input from the stream.
+   * Read and decode input from the stream this decoder was constructed on.
    * @return {object} object decoded from the data
    */
   decodes() {
+    this.tagHandler.startDecoding(this);
+
     const ret = this.decodeItem();
-    this.tagHandler.finishDecoding(this, ret);
-    return ret;
+
+    // There may be following items that need to be consumed to support
+    // tag handlers (e.g. TypeMap and KeyDictionary).
+    while (!this.stream.exhausted()) {
+      this.decodeItem();
+    }
+
+    return this.tagHandler.finishDecoding(this, ret);
   }
 
   /**
    * Decode a value from CBOR.
    * @param {TypedArray|ArrayBuffer|DataView} data data to decode
    * @param {TagHandler?} optional tag handler
+   * @param {function?} debug debug print function
    * @return {object} the decoded data
    */
-  static decode(encoded, handler, debug) {
+  static decode(encoded, handler, debug = (() => {})) {
     const ins = new MemoryInStream(encoded);
     const decoder = new Decoder(ins, handler);
     decoder.debug = debug;
@@ -330,5 +348,5 @@ class Decoder {
   }
 }
 
-export { Decoder };
+export default Decoder;
 

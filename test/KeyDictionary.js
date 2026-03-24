@@ -1,11 +1,11 @@
 /* eslint-env node, mocha */
 
-import { MemoryInStream } from "../src/MemoryInStream.js";
-import { MemoryOutStream } from "../src/MemoryOutStream.js";
-import { Encoder } from "../src/Encoder.js";
-import { Decoder } from "../src/Decoder.js";
-import { KeyDictionaryHandler } from "../src/KeyDictionaryHandler.js";
-import { TagHandler } from "../src/TagHandler.js";
+import MemoryInStream from "../src/MemoryInStream.js";
+import MemoryOutStream from "../src/MemoryOutStream.js";
+import Encoder from "../src/Encoder.js";
+import Decoder from "../src/Decoder.js";
+import KeyDictionaryHandler from "../src/KeyDictionaryHandler.js";
+import TagHandler from "../src/TagHandler.js";
 
 describe("KeyDictionary", () => {
 
@@ -35,7 +35,9 @@ describe("KeyDictionary", () => {
   const ABC = {
     Aardvaark: A,
     Budgerigar: {
-      Aardvaark: "A", Budgerigar: "B", Crocodile: "C"
+      Aardvaark: "A",
+      Budgerigar: "B",
+      Crocodile: "C"
     },
     Crocodile: {
       Aardvaark: "v",
@@ -50,7 +52,6 @@ describe("KeyDictionary", () => {
 
   it("JSON", () => {
     const frozen = JSON.stringify(ABC);
-    console.log("JSON", frozen.length);
     const thawed = JSON.parse(frozen);
 
     assert.deepEqual(thawed, ABC);
@@ -58,23 +59,15 @@ describe("KeyDictionary", () => {
 
   it("no tag handler", () => {
     const frozen = Encoder.encode(ABC);
-
-    console.log("no tag handler", frozen.length);
-
     const thawed = Decoder.decode(frozen);
 
     assert.deepEqual(thawed, ABC);
   });
 
   it("no keys known", () => {
-    const tagger = new (KeyDictionaryHandler(TagHandler))({
-      //debug: console.debug
-    });
+    const tagger = new (KeyDictionaryHandler(TagHandler))();
 
     const frozen = Encoder.encode(ABC, tagger);
-
-    console.log("no keys known", frozen.length);
-
     const thawed = Decoder.decode(frozen, tagger);
 
     assert.deepEqual(thawed, ABC);
@@ -87,8 +80,6 @@ describe("KeyDictionary", () => {
 
     const frozen = Encoder.encode(ABC, tagger);
 
-    console.log("some keys known", frozen.length);
-
     const thawed = Decoder.decode(frozen, tagger);
 
     assert.deepEqual(thawed, ABC);
@@ -100,9 +91,6 @@ describe("KeyDictionary", () => {
     });
 
     const frozen = Encoder.encode(ABC, tagger);
-
-    console.log("all keys known", frozen.length);
-
     const thawed = Decoder.decode(frozen, tagger);
 
     assert.deepEqual(thawed, ABC);
