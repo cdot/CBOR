@@ -14,7 +14,7 @@ class DataInStream {
    * @return {number} the data read
    */
   readFloat16() {
-    throw Error("DataInStream.readFloat16");
+    throw new Error("DataInStream.readFloat16");
   }
 
   /* istanbul ignore next */
@@ -23,7 +23,7 @@ class DataInStream {
    * @return {number} the data read
    */
   readFloat32() {
-    throw Error("DataInStream.readFloat32");
+    throw new Error("DataInStream.readFloat32");
   }
 
   /* istanbul ignore next */
@@ -32,7 +32,7 @@ class DataInStream {
    * @return {number} the data read
    */
   readFloat64() {
-    throw Error("DataInStream.readFloat64");
+    throw new Error("DataInStream.readFloat64");
   }
 
   /* istanbul ignore next */
@@ -41,7 +41,7 @@ class DataInStream {
    * @return {number} the data read
    */
   readUint8() {
-    throw Error("DataInStream.readUint8");
+    throw new Error("DataInStream.readUint8");
   }
 
   /* istanbul ignore next */
@@ -50,7 +50,7 @@ class DataInStream {
    * @return {number} the data read
    */
   readUint16() {
-    throw Error("DataInStream.readUint16");
+    throw new Error("DataInStream.readUint16");
   }
 
   /* istanbul ignore next */
@@ -59,7 +59,7 @@ class DataInStream {
    * @return {number} the data read
    */
   readUint32() {
-    throw Error("DataInStream.readUint32");
+    throw new Error("DataInStream.readUint32");
   }
 
   /* istanbul ignore next */
@@ -77,7 +77,7 @@ class DataInStream {
    * @return {Uint8Array} the data read
    */
   readUint8Array(length) {
-    throw Error(`DataInStream.readUint8Array(${length})`);
+    throw new Error(`DataInStream.readUint8Array(${length})`);
   }
 
   /* istanbul ignore next */
@@ -86,7 +86,7 @@ class DataInStream {
    * @return {Uint8} the next byte, without reading it
    */
   peekUint8() {
-    throw Error("DataInStream.peekUint8");
+    throw new Error("DataInStream.peekUint8");
   }
 
   /* istanbul ignore next */
@@ -94,7 +94,7 @@ class DataInStream {
    * Like mark(), reset()
    */
   get mark() {
-    throw Error("DataInStream.get mark");
+    throw new Error("DataInStream.get mark");
   }
 
   /* istanbul ignore next */
@@ -102,7 +102,7 @@ class DataInStream {
    * Like mark(), reset()
    */
   set mark(m) {
-    throw Error("DataInStream.set mark");
+    throw new Error("DataInStream.set mark");
   }
 
   /**
@@ -110,7 +110,7 @@ class DataInStream {
    * @return {boolean} true if the stream is exhausted
    */
   exhausted() {
-    throw Error("DataInStream.exhausted");
+    throw new Error("DataInStream.exhausted");
   }
 }
 

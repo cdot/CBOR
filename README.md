@@ -136,39 +136,43 @@ prototype will be restored.
 The keys in the type map let the encoder determine the prototypes you
 want to remember. When an object is serialised, the prototype chain of
 that object is followed to see if the constructor name is in the type
-map. During encoding, only the keys in the type map are important, the
-values are ignored. During decoding, the values are the class that the
-object will be instantiated as. During instantiation of a class in the
+map. During decoding, the type map maps the prototype name to the actual
+prototype object. During instantiation of a class in the
 decoder, the constructor will be called with no parameters and the
-attributes written into the instance after construction.
+properties written into the instance after construction.
 
-Note that instances of subclasses of a class mentioned in the type map
-will be regenerated according to the type map used with the decoder. So
-it's possible to change the class of an object thus:
+If the prototype of an object being serialised (or one of it's superclasses)
+can't be found in the type map, then it will be serialised as a plain
+(unprototyped) object. If the `keepAllProtos` option is passed, all
+prototyped objects will be tagged with the immediate prototype name.
 ```
-class Thing { ... }
-class SubThing extends Thing { ... }
-const data = new SubThing();
-const outhandler = new (TypeMapHandler(TagHandler))({
-    // Save all subclasses of 'Thing' as class 'Thing'
-    typeMap: { Thing: Thing }
-});
-const frozen = CBOR.Encoder.encode(data, outhandler);
-...
-class NewThing extends Thing { ... }
+const data = [ new Thing(), new Thong() ];
 const inhandler = new (TypeMapHandler(TagHandler))({
-    // Map all saved 'Thing's to 'NewThing's
-    typeMap: { Thing: NewThing }
+    keepAllProtos: true
+});
+const frozen = CBOR.Encoder.encode(data, inhandler);
+...
+const inhandler = new (TypeMapHandler(TagHandler))({
+    typeMap: { Thing: Thing, Thong: Thong }
 });
 const decoded = CBOR.Decoder.decode(frozen, inhandler);
 ```
-`decoded` will now be an instance of class `NewThing` with all the same
-attributes as the original `data` (including any additional attributes
-added when it was a `SubThing`).
 
-You *must* add all complex types that you want to restore to the `typeMap`.
-If you miss a class, then objects of that type will be saved as a simple
-data object.
+When deserialising, the `typeMap` must map prototype names to the
+actual prototype. If the prototype name can't be found in the `typeMap`
+it will be looked up in `window` (browser only, this won't work in node.js).
+Failure to map a prototype name will throw an error. You can supress the error
+by passing the `skipMissingProtos` option. In this case, prototype names
+that can't be mapped will be ignored during decoding. Using the
+previous example:
+```
+const inhandler = new (TypeMapHandler(TagHandler))({
+    skipMissingProtos: true
+});
+const decoded = CBOR.Decoder.decode(frozen, inhandler);
+```
+The prototypes `Thing` and `Thong` will be lost, but all properties
+will be present.
 
 Note that if you want to use both the `IDREFHandler` and the `TypeMapHandler`
 then you MUST include the `IDREFHandler` in the prototype chain first, thus:
@@ -181,16 +185,21 @@ const handler = new (TypeMapHandler(IDREFHandler(TagHandler))(...);
 ```
 
 If the encoded output is still too big because of type names being encoded as
-string literals, you can pass the `mapClassNames` option to the encoding handler to enable encoding class names as numbers. This comes at a performance cost, of course!
+string literals, you can pass the `useProtoDictionary` option to the encoding handler to create class name dictionary.
 ```
-const outhandler = new (TypeMapHandler(TagHandler))({ mapClassNames: true });
+const outhandler = new (TypeMapHandler(TagHandler))({
+  useProtoDictionary: true
+});
 ```
-The decoder doesn't have to have the option.
+Sometimes using a dictionary can yield a performance improvement.
+
+The handler will also work with prototypal inheritance (old-style classes built
+using function constructors).
 
 ## KeyDictionaryHandler
 
 If you are saving lots of data structures that are the same, then the basic
-encoder will save all the attribute names for each instance saved. So if you
+encoder will save all the property names for each instance saved. So if you
 have a structure like this:
 ```
 class Location {
@@ -201,8 +210,8 @@ const data = [ ... array of 10,000 Location ... ]
 ```
 then there will be 10,000 copies of the word `latitude` and 10,000 copies of the word `longitude` in the output. To
 optimise this, the `KeyDictionaryHandler` creates a lookup table of key
-strings and replaces the keys with a simple integer ID. When the data is
-decoded, the key dictionary is used to recreate the original attribute names.
+strings and replaces the keys with a simple ID. When the data is
+decoded, the key dictionary is used to recreate the original property names.
 
 The handler can be used with an known list of keys e.g.
 ```

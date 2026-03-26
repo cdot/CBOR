@@ -11,18 +11,28 @@ const CBOR_CID_MAP = 25445;
 const CLASS_ID = "ଈqആ";
 
 /**
- * TagHandler mixin to restore the class of a serialised object.
- * The mixin is constructed with a type map that maps constuctor
- * names to the actual class object. When an object is serialised, the
- * inheritance chain of that object is followed to see if the constructor
- * is in the type map. If it is, the object is tagged with that
- * constructor name.
+ * TagHandler mixin to restore the prototype of a serialised object.
+ * Prototyped objects have their prototype name serialised with them.
  *
- * When deserialising, the typemap is looked up to recreate objects
- * with the relevant prototype.
+ * The mixin accepts a `typeMap` option that is an object that maps
+ * constructor (class) names. When an object is serialised, the
+ * inheritance chain of that object is followed to
+ * see if one of the constructors is in the `typeMap`. If it is, the
+ * object is tagged with that constructor name. If it isn't found in
+ * the typemap, or if no type map is given, the object will be
+ * serialised as a plain (unprototyped) object. If the `keepAllProtos`
+ * option is passed, all prototyped objects will be tagged with the
+ * immediate prototype name.
+ *
+ * When deserialising, the `typeMap` must map prototype names to the
+ * actual prototype. If the prototype name can't be found in the `typeMap`
+ * it will be looked up in `window` (browser only, this won't work in node.js).
+ * Failure to map a prototype is an error. You can supress the error
+ * by passing the `skipMissingProtos` option. In this case, prototype names
+ * that can't be mapped will be ignored during decoding.
  *
  * This allows us to serialise an object as one class, then deserialise
- * it as another, so long as they share a common prototype ancestor.
+ * it as another.
  *
  * Adds two CBOR tags:
  * * 25443 - the prototype name of an object.
@@ -44,6 +54,7 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
 
     /**
      * Map of prototype name to prototype object.
+     * @private
      * @member {object.<string,object>}
      */
     this.typeMap = this.options.typeMap || {};
@@ -51,26 +62,28 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
     /**
      * Prototype of the next object to be created during
      * decoding. Mutually exclusive with pendingProtoID, not used
-     * when mapClassNames is true.
+     * when useProtoDictionary is true.
      * @member {object}
      * @private
      */
     this.pendingProtoObject = undefined;
 
     /**
-     * Prorotype ID waiting to be added to a created object during
+     * Prototype ID waiting to be added to a created object during
      * decoding. Mutually exclusive with pendingProtoObject, only used
-     * when mapClassNames is true.
+     * when useProtoDictionary is true.
      * @member {string?}
+     * @private
      */
     this.pendingProtoID = undefined;
 
     /**
      * Map from class ID to class name, only used
-     * when mapClassNames is true.
+     * when useProtoDictionary is true.
      * @member {object.<number,string>}
+     * @private
      */
-    this.classMap = undefined;
+    this.protoMap = undefined;
   }
 
   /**
@@ -97,18 +110,21 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
       if (typeof classId === "number") {
         delete data[CLASS_ID];
         // Map ID to the class name
-        const className = this.classMap[classId];
+        const className = this.protoMap[classId];
         // Map the class name to the actual prototype
-        const proto = this.typeMap[className].prototype;
-        if (!proto)
-          throw Error(`${className} missing from type map`);
+        let proto;
+        if (this.typeMap[className])
+          proto = this.typeMap[className].prototype;
+        else if (typeof window !== "undefined")
+          proto = window[className];
+        // else window doesn't exist in node.js, all classes have
+        // to be in the typeMap.
 
-        // SMELL: Would Object.setPrototypeOf be better? Doc says
-        // it is much slower, but it would avoid having to use remap.
-        const newData = Object.create(proto);
-        for (const f of Object.keys(data))
-          newData[f] = data[f]; // data already has placeholders mapped
+        /* istanbul ignore if */
+        if (!proto && !this.options.skipMissingProtos)
+          throw new Error(`decode could not find the prototype for "${className}"`);
 
+        const newData = Object.assign(Object.create(proto), data);
         data = newData;
       }
     }
@@ -123,10 +139,10 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
   finishEncoding(encoder) {
     super.finishEncoding(encoder);
     // Write the class map (if there is one)
-    if (this.classMap && this.classMap.length > 0) {
-      encoder.debug("finishEncoding: writing classMap", this.classMap.length);
+    if (this.protoMap && this.protoMap.length > 0) {
+      encoder.debug("finishEncoding: writing protoMap", this.protoMap.length);
       encoder.writeTag(CBOR_CID_MAP);
-      encoder.encodeItem(this.classMap);
+      encoder.encodeItem(this.protoMap);
     }
   }
 
@@ -137,7 +153,7 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
    */
   startDecoding(decoder) {
     super.startDecoding(decoder);
-    this.classMap = undefined;
+    this.protoMap = undefined;
   }
 
   /**
@@ -147,11 +163,11 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
    */
   finishDecoding(decoder, data) {
     data = super.finishDecoding(decoder, data);
-    if (this.classMap) {
-      decoder.debug("finishDecoding: mapping placeholders", this.classMap.length);
+    if (this.protoMap) {
+      decoder.debug("finishDecoding: mapping placeholders", this.protoMap.length);
       // remap all placeholders to objects with protos
       data = this.mapPlaceholders(data);
-      this.classMap = undefined;
+      this.protoMap = undefined;
     }
     return data;
   }
@@ -162,45 +178,45 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
    * @memberof TypeMapHandler
    */
   encode(value, encoder) {
+    // Get the constructor the object is most closely associated with
     let freezable = value.constructor;
     const exts = [];
-    let tagged = false;
-    while (freezable && freezable.name !== "Object") {
+    let protoEncoded = false;
+    // SMELL: freezable will always be non-null, won't it?
+    while (freezable && freezable.name !== "Object"
+           && freezable.name !== "Array") {
       encoder.debug(`encode: encoding a ${freezable.name}`);
       exts.push(freezable.name);
-      if (this.typeMap[freezable.name]) {
-        encoder.debug(`encode: ${freezable.name} is in the typeMap`);
+      if (this.options.keepAllProtos || this.typeMap[freezable.name]) {
+        encoder.debug(`TMH encode: ${freezable.name} is encodable`);
         encoder.writeTag(CBOR_CID);
-        // Tradeoff:
-        // The encoding for a 2-character ascii string is 1+1+2=4 bytes.
-        // The encoding for an ID is going to be a maximum of 3 bytes,
-        // but the cost of mapping via IDs is quite high so we're better
-        // off using the character representation for short names.
-        if (this.options.mapClassNames && freezable.name.length > 2) {
+        if (this.options.useProtoDictionary) {
           // Map the constructor name to an ID
           let protoIndex = -1;
-          if (!this.classMap)
-            this.classMap = [];
+          if (!this.protoMap)
+            this.protoMap = [];
           else
-            protoIndex = this.classMap.indexOf(freezable.name);
+            protoIndex = this.protoMap.indexOf(freezable.name);
           if (protoIndex < 0) {
-            this.classMap.push(freezable.name);
-            protoIndex = this.classMap.length - 1;
+            this.protoMap.push(freezable.name);
+            protoIndex = this.protoMap.length - 1;
           }
-          encoder.debug(`encode: ${freezable.name} is index ${protoIndex}`);
+          encoder.debug(`TMH encode: ${freezable.name} is ${protoIndex}`);
           encoder.encodeItem(protoIndex);
-        } else {
+        } else
+          // Store the whole name
           encoder.encodeItem(freezable.name);
-        }
-        tagged = true;
-        encoder.debug(`\tTYPE_TAG ${exts.join("-")}`);
+        protoEncoded = true;
+        encoder.debug(`\tClassed ${exts.join("-")}`);
         break; // while
       }
+      // Same as freezable.__proto__ (__proto__ is non-standard)
       freezable = Object.getPrototypeOf(freezable);
     }
 
-    if (!tagged && !Array.isArray(value))
-      encoder.debug(`\tCAN'T TYPE-TAG ${exts}`);
+    /* istanbul ignore if */
+    if (!protoEncoded && !Array.isArray(value))
+      encoder.debug(`\tCan't encode prototype for ${exts.join("-")}`);
 
     // Allow other mixins to have a crack at the object
     return super.encode(value, encoder);
@@ -216,13 +232,26 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
       const protoID = decoder.decodeItem();
       decoder.debug("Tag: CN protoID", protoID);
       if (typeof protoID === "string") {
-        // Simple prototype name
+        let clasz;
+        if (this.typeMap && this.typeMap[protoID])
+          clasz = this.typeMap[protoID];
+        else if (typeof window !== "undefined")
+          clasz = window[protoID];
+        // else node.js, window doesn't exist
+
         /* istanbul ignore if */
-        const clasz = this.typeMap[protoID];
+        if (!clasz) {
+          if (!this.options.skipMissingProtos)
+            throw new Error(`decode could not find the prototype for "${protoID}"`);
+          // This object was tagged with a prototype ID that can't be resolved
+          // to a class using the typeMap (or window in browser)
+          // see #1 below
+          decoder.debug(`decode: ${protoID} could not be resolved`);
+          return undefined;
+        }
+
         decoder.debug(`decode: map ${protoID} to ${clasz}`);
-        /* istanbul ignore if */
-        if (!clasz)
-          throw Error(`${protoID} missing from type map`);
+
         // The next object created will get this prototype
         this.pendingProtoObject = clasz.prototype;
 
@@ -230,11 +259,10 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
         // When createObject is called, the pendingProtoObject will be used.
       } else {
         // Prototype name mapping
-
         this.pendingProtoID = protoID;
       }
 
-      // return undefined to let the decoder unpack the following object.
+      // #1 return undefined to let the decoder unpack the following object.
       // When createObject is called, the pendingProtoID will be stored
       // on the object. Then, when finishDecoding is called, these IDs
       // will be found and the objects rebuilt using the required prototypes.
@@ -244,8 +272,8 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
       decoder.debug(`decode: loading class map`);
       // Get the prototype map, mapping from prototype
       // ID to prototype name.
-      this.classMap = decoder.decodeItem();
-      decoder.debug(`decode: Read ${this.classMap.length} class names`);
+      this.protoMap = decoder.decodeItem();
+      decoder.debug(`decode: Read ${this.protoMap.length} class names`);
 
       // return *something* defined so the decoder doesn't attempt
       // to decode the following item.

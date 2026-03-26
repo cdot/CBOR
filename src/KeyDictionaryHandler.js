@@ -26,14 +26,15 @@ function remapKeys(data, i2k) {
 
   function _remapKeys(data) {
     if (typeof data === "object" && data !== null) {
-      if (Array.isArray(data)) {
-        for (const d of data)
-          _remapKeys(d);
-        return;
-      }
       if (data[PROCESSED]) return;
       processed.push(data);
       data[PROCESSED] = true;
+      if (Array.isArray(data)) {
+        for (const d of data) {
+          _remapKeys(d);
+        }
+        return;
+      }
       const phKeys = Object.keys(data);
       for (const ph of phKeys) {
         _remapKeys(data[ph]);
@@ -133,7 +134,20 @@ const KeyDictionaryHandler = superclass => class extends superclass {
    */
   startDecoding(decoder) {
     super.startDecoding(decoder);
-    this.i2k_added = [];
+    this.i2k_added = undefined;
+  }
+
+  /**
+   * @override
+   * @instance
+   * @memberof KeyDictionaryHandler
+   */
+  trailingData(decoder, data) {
+    if (!this.i2k_added && Array.isArray(data)) {
+      // Hopefully this is a key map
+      this.i2k_added = data;
+      decoder.debug("KDH got trailing dictionary");
+    }
   }
 
   /**
@@ -153,14 +167,14 @@ const KeyDictionaryHandler = superclass => class extends superclass {
       // that put the key dict at the end of the data.
       decoder.debug("finishDecoding: no i2k_added found, compatibility");
       // Some early versions of this module generated output with no
-      // key dict, which would result in a throw, so handle that with
-      // a try-catch.
-      try {
+      // key dict
+      if (decoder.stream.exhausted()) {
+        decoder.debug("KDH.finishDecoding: no key map found");
+        extras = [];
+      } else {
         extras = decoder.decodeItem();
-        decoder.debug("KDH.finishDecoding old format; read",
+        decoder.debug("KDH.finishDecoding; read trailing key map",
                       this.extras.length, " added keys");
-      } catch (e) {
-        decoder.debug("KDH throw while decoding old format", e);
       }
     }
     remapKeys(data, [ ...this.i2k, ...extras ] );
@@ -204,13 +218,13 @@ const KeyDictionaryHandler = superclass => class extends superclass {
     // else id is not in the supplied key index.
 
     // The dictionary for supplemental keys will be read at the end
-    // of the input data, in finishedDecoding. For now, we insert a
-    // placeholder key that will be resolved at the end of decoding,
-    // when we have unpacked the dictionary.
+    // of the input data. For now, we insert a placeholder key that
+    // will be resolved at the end of decoding, when we have unpacked
+    // the dictionary.
     // SMELL: there's a vanishingly small risk that this might
     // duplicate a "real" key.
     const key = `${SECRET}${id}`;
-    decoder.debug("inserted placeholder for",id);
+    decoder.debug("KDH.decodeKey inserted placeholder for", id);
     return key;
   }
   

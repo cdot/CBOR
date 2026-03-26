@@ -26,30 +26,74 @@ describe("TypeMap", () => {
     }
   });
 
+  class Simple {
+    data = "simple_data";
+    constructor(name = "simple_name") {
+      this.name = name;
+    }
+    func() { return "simple_func"; }
+  }
+
   function UNit() {}
 
-  function superSimple(opts) {
+  it("super simple, no typemap", () => {
+    // No typemap and keepAllProtos is false.
+    // prototypes should be stripped
+    const tagger = new (TypeMapHandler(TagHandler))();
+    const simple = new Simple();
+    const frozen = Encoder.encode(simple, tagger);
+    const thawed = Decoder.decode(frozen, tagger);
+    assert.equal(thawed.constructor.name, "Object");
+    assert(!(thawed instanceof Simple));
+    assert.deepEqual(thawed, simple);
+  });
+  
+  it("keeps all protos", () => {
+    // Serialise without Simple in the typeMap
+    const opts = { keepAllProtos: true };
+    let tagger = new (TypeMapHandler(TagHandler))(opts);
+    const simple = new Simple();
+    const frozen = Encoder.encode(simple, tagger);
+
+    // Need Simple in the typeMap to recreate a Simple
+    opts.typeMap = { Simple: Simple };
+    tagger = new (TypeMapHandler(TagHandler))(opts);
+    const thawed = Decoder.decode(frozen, tagger);
+    assert(thawed instanceof Simple);
+    assert.deepEqual(thawed, simple);
+  });
+
+  function missingProtos(opts) {
     return () => {
-      class Simple {
-        data = "simple_data";
-        constructor(name = "simple_name") {
-          this.name = name;
-        }
-        func() { return "simple_func"; }
+      class SkipMe {
+        data = "skip_me";
       }
-
-      const simple = new Simple();
-
-      const tagger = new (TypeMapHandler(TagHandler))(opts);
+      opts.keepAllProtos = true;
+      let tagger = new (TypeMapHandler(TagHandler))(opts);
+      const simple = [ new Simple(), new SkipMe() ];
       const frozen = Encoder.encode(simple, tagger);
-      //console.debug(frozen.length);
-      const thawed = Decoder.decode(frozen, tagger);
+
+      // Need Simple in the typeMap to recreate a Simple, but SkipMe
+      // is going to be read as an unprototyped object.
+      opts.typeMap = { Simple: Simple };
+      tagger = new (TypeMapHandler(TagHandler))(opts);
+      let thawed;
+      // Should throw without skipMissingProtos
+      try {
+        thawed = Decoder.decode(frozen, tagger/*, console.debug*/);
+      } catch (e) {
+        //console.debug(e);
+        assert(!opts.skipMissingProtos);
+        return;
+      }
+      assert.equal(thawed[0].constructor.name, "Simple");
+      assert.equal(thawed[1].constructor.name, "Object");
+      assert(thawed[0] instanceof Simple);
       assert.deepEqual(thawed, simple);
     };
   }
-
-  it("super simple", superSimple());
-  it("super simple with mapClassNames", superSimple({mapClassNames:true}));
+  it("skips missing protos", missingProtos({skipMissingProtos: true}));
+  it("error on missing protos", missingProtos({skipMissingProtos: false}));
 
   function remap(opts = {}) {
     return () => {
@@ -96,7 +140,7 @@ describe("TypeMap", () => {
   };
 
   it("remap", remap({}));
-  it("remap with mapClassNames", remap({ mapClassNames: true }));
+  it("remap with useProtoDictionary", remap({ useProtoDictionary: true }));
   
   function unencodableClassName(opts = {}) {
     return () => {
@@ -123,9 +167,8 @@ describe("TypeMap", () => {
       assert.deepEqual(thawed, simple);
     };
   }
-
   it("unencodeable class name", unencodableClassName());
-  it("unencodeable class name, mapClassNames", unencodableClassName({mapClassNames:true}));
+  it("unencodeable class name, useProtoDictionary", unencodableClassName({useProtoDictionary:true}));
   
   function simpleMixins(opts = {}) {
     return () => {
@@ -155,7 +198,7 @@ describe("TypeMap", () => {
     };
   }
   it("simple mixins", simpleMixins());
-  it("simple mixins, map class names", simpleMixins({mapClassNames:true}));
+  it("simple mixins, useProtoDictionary", simpleMixins({useProtoDictionary:true}));
 
   function wrappingMixins(opts = {}) {
     return () => {
@@ -205,7 +248,7 @@ describe("TypeMap", () => {
     };
   }
   it("wrapping mixins", wrappingMixins());
-  it("wrapping mixins, map class names", wrappingMixins({mapClassNames:true}));
+  it("wrapping mixins, useProtoDictionary", wrappingMixins({useProtoDictionary:true}));
 
   function bigArray(opts = {}) {
     return () => {
@@ -227,5 +270,38 @@ describe("TypeMap", () => {
   }
 
   it("big array", bigArray());
-  it("big array, map class names", bigArray({mapClassNames:true}));
+  it("big array, useProtoDictionary", bigArray({useProtoDictionary:true}));
+
+  function classical(opts = {}) {
+    return () => {
+      function Class() {
+        this.name = "Class";
+      }
+
+      Class.prototype.getName = function() {
+        return this.name;
+      };
+
+      function SubClass() {
+        Class.call(this);
+      }
+      SubClass.prototype = Object.create(Class.prototype);
+      SubClass.prototype.constructor = SubClass;
+
+      const data = new SubClass();
+      assert(data instanceof SubClass);
+      assert(data instanceof Class);
+      opts.typeMap = { SubClass: SubClass };
+      const tagger = new (TypeMapHandler(TagHandler))(opts);
+      const debug = () => {};
+      //const debug = console.debug;
+      const frozen = Encoder.encode(data, tagger, debug);
+      const thawed = Decoder.decode(frozen, tagger, debug);
+      assert(thawed instanceof SubClass);
+      assert(thawed instanceof Class);
+      assert.deepEqual(thawed, data);
+    };
+  }      
+  it("classical", classical());
+  it("classical, useProtoDictionary", classical({useProtoDictionary:true}));
 });

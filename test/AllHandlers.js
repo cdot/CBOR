@@ -1,13 +1,9 @@
 /* eslint-env node, mocha, browser */
 
-import MemoryInStream from "../src/MemoryInStream.js";
-import MemoryOutStream from "../src/MemoryOutStream.js";
-import Encoder from "../src/Encoder.js";
-import Decoder from "../src/Decoder.js";
-import TypeMapHandler from "../src/TypeMapHandler.js";
-import KeyDictionaryHandler from "../src/KeyDictionaryHandler.js";
-import IDREFHandler from "../src/IDREFHandler.js";
-import TagHandler from "../src/TagHandler.js";
+import {
+  Encoder, Decoder,
+  TypeMapHandler, KeyDictionaryHandler, IDREFHandler, TagHandler
+} from "../src/CBOR.js";
 
 describe("All handlers", () => {
 
@@ -141,13 +137,54 @@ describe("All handlers", () => {
 
     const tagger = new (KeyDictionaryHandler(
       IDREFHandler(TypeMapHandler(TagHandler))))({
-        added: k => { throw Error(k) },
+        added: k => { throw new Error(k); },
         keys: [ "Aardvaark", "Budgerigar", "Crocodile" ]
       });
 
     const frozen = Encoder.encode(ABC, tagger);
     const thawed = Decoder.decode(frozen, tagger);
     assert.deepEqual(thawed, ABC);
+  });
+
+  it("handles array self reference", () => {
+    class Class {
+      name = "Class";
+      array = [ 1, 2, 3 ];
+      constructor(thing) {
+        this.thing = thing;
+      }
+    }
+
+    class Harry extends Array {
+      constructor() {
+        super();
+        this[0] = new Class(this);
+        this[1] = this[0];
+        this[2] = this;
+        this[3] = [ this ];
+      }
+    }
+
+    const handler = new (IDREFHandler(KeyDictionaryHandler(
+      TypeMapHandler(TagHandler))))({
+        typeMap: { Class: Class }
+      });
+
+    const harry = new Harry();
+    const frozen = Encoder.encode(harry, handler);
+    const thawed = Decoder.decode(frozen, handler);
+
+    assert(Array.isArray(thawed));
+    assert(thawed[0] instanceof Class);
+    assert(thawed[0].thing === thawed);
+    
+    // Make sure both array elements refer to the same object
+    thawed[0].extra = true;
+    assert(thawed[1].extra);
+
+    assert(thawed[2] === thawed);
+
+    assert(thawed[3][0] === thawed);
   });
 });
          

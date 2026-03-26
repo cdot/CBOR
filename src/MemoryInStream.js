@@ -42,7 +42,7 @@ class MemoryInStream extends DataInStream {
       if (!(data.buffer
             && typeof data.byteLength === "number"
             && typeof data.byteOffset == "number")) {
-        throw Error("MemoryInStream: data unusable");
+        throw new Error("MemoryInStream: data unusable");
       }
 
       this.view = new DataView(data.buffer, data.byteOffset, data.byteLength);

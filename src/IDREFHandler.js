@@ -118,7 +118,7 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
       decoder.debug("\tIDREF: REF to", ref);
       /* istanbul ignore if */
       if (!this.objectsThawed[ref])
-        throw Error(`Reference to unthawed ${ref}`);
+        throw new Error(`Reference to unthawed ${ref}`);
       return this.objectsThawed[ref];
     }
 

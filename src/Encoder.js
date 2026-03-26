@@ -144,7 +144,7 @@ class Encoder {
 
       /* istanbul ignore next */
     case "function":
-      throw Error("Can't CBOR function");
+      throw new Error("Can't CBOR function");
     }
 
     if (value instanceof Date) {

@@ -162,7 +162,7 @@ describe("ID-REF tag mixin", () => {
     assert(thawed.obj1 === thawed.obj2);
   });
 
-  it("self-referential", () => {
+  it("simple self-referential", () => {
 
     let frood = {};
     frood.selfRef = frood;
@@ -180,5 +180,29 @@ describe("ID-REF tag mixin", () => {
 
     //console.log(JSON.stringify(thawed));
     assert(thawed.selfRef === thawed);
+  });
+
+  it("class self-referential", () => {
+
+    class Frood extends Array {
+      constructor() {
+        super();
+        this[0] = this;
+      }
+    }
+    const frood = new Frood();
+
+    const tagger = new (IDREFHandler(TagHandler))();
+
+    let outs = new MemoryOutStream();
+    new Encoder(outs, tagger).encodes(frood);
+    let frozen = outs.Uint8Array;
+
+    //console.log(frozen);
+    const decoder = new Decoder(new MemoryInStream(frozen), tagger);
+    //decoder.debug = console.debug;
+    let thawed = decoder.decodes();
+
+    assert.equal(thawed[0], thawed);
   });
 });

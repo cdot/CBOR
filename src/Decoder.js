@@ -85,7 +85,7 @@ class Decoder {
         return -1; // indefinite length, or break
       }
     }
-    throw Error(`Malformed ${majorType} ${ai}`);
+    throw new Error(`Malformed ${majorType} ${ai}`);
   }
 
   /**
@@ -103,10 +103,10 @@ class Decoder {
       if (ai === 0x1f)
         return -1; // "break"
       if (type !== majorType)
-        throw Error(`Major type mismatch on chunk ${type}!=${majorType}`);
+        throw new Error(`Major type mismatch on chunk ${type}!=${majorType}`);
       const len = this.readArgument(ai, majorType);
       if (len < 0)
-        throw Error(`Invalid chunk length ${len}`);
+        throw new Error(`Invalid chunk length ${len}`);
       return len;
     };
     const elements = [];
@@ -206,7 +206,7 @@ class Decoder {
           return this.readIndefiniteBytes(majorType);
       len = this.readArgument(ai, 2);
       if (len < 0)
-        throw Error(`Invalid byte string length ${len}`);
+        throw new Error(`Invalid byte string length ${len}`);
       return this.stream.readUint8Array(len);
 
     case 3: // UTF-8 encoded text string
@@ -218,7 +218,7 @@ class Decoder {
         this.debug(`${this.stream.readPos}: TEXT `);
         len = this.readArgument(ai, 3);
         if (len < 0)
-          throw Error(`Invalid text length ${len}`);
+          throw new Error(`Invalid text length ${len}`);
         text = new TextDecoder().decode(this.stream.readUint8Array(len));
       }
       this.debug(`\t"${text}"`);
@@ -232,7 +232,7 @@ class Decoder {
       }
       len = this.readArgument(ai, 4);
       if (len < 0)
-        throw Error("Invalid array length ${len}");
+        throw new Error("Invalid array length ${len}");
       /* istanbul ignore if */
       this.debug(`${this.stream.readPos}: ARRAY ${len}`);
       return this.readItemArray(len);
@@ -245,7 +245,7 @@ class Decoder {
       }
       len = this.readArgument(ai, 5);
       if (len < 0)
-        throw Error("Invalid map length ${len}");
+        throw new Error("Invalid map length ${len}");
       /* istanbul ignore if */
       this.debug(`${this.stream.readPos}: MAP length ${len}`);
       return this.readKV(len);
@@ -312,7 +312,7 @@ class Decoder {
     }
 
     /* istanbul ignore next */
-    throw Error(`Unrecognised major type ${majorType}`);
+    throw new Error(`Unrecognised major type ${majorType}`);
   }
 
   /**
@@ -325,9 +325,10 @@ class Decoder {
     const ret = this.decodeItem();
 
     // There may be following items that need to be consumed to support
-    // tag handlers (e.g. TypeMap and KeyDictionary).
+    // tag handlers.
     while (!this.stream.exhausted()) {
-      this.decodeItem();
+      const item = this.decodeItem();
+      this.tagHandler.trailingData(this, item);
     }
 
     return this.tagHandler.finishDecoding(this, ret);
