@@ -115,12 +115,13 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
         let proto;
         if (this.typeMap[className])
           proto = this.typeMap[className].prototype;
+        /* c8 ignore start */
         else if (typeof window !== "undefined")
           proto = window[className];
+        /* c8 ignore stop */
         // else window doesn't exist in node.js, all classes have
         // to be in the typeMap.
 
-        /* istanbul ignore if */
         if (!proto && !this.options.skipMissingProtos)
           throw new Error(`decode could not find the prototype for "${className}"`);
 
@@ -214,7 +215,6 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
       freezable = Object.getPrototypeOf(freezable);
     }
 
-    /* istanbul ignore if */
     if (!protoEncoded && !Array.isArray(value))
       encoder.debug(`\tCan't encode prototype for ${exts.join("-")}`);
 
@@ -239,7 +239,6 @@ const TypeMapHandler = superclass => class TypeMapHandler extends superclass {
           clasz = window[protoID];
         // else node.js, window doesn't exist
 
-        /* istanbul ignore if */
         if (!clasz) {
           if (!this.options.skipMissingProtos)
             throw new Error(`decode could not find the prototype for "${protoID}"`);

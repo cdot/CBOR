@@ -8,7 +8,6 @@
  */
 class DataInStream {
 
-  /* istanbul ignore next */
   /**
    * Read a short float.
    * @return {number} the data read
@@ -17,7 +16,6 @@ class DataInStream {
     throw new Error("DataInStream.readFloat16");
   }
 
-  /* istanbul ignore next */
   /**
    * Read a float.
    * @return {number} the data read
@@ -26,7 +24,6 @@ class DataInStream {
     throw new Error("DataInStream.readFloat32");
   }
 
-  /* istanbul ignore next */
   /**
    * Read a long float.
    * @return {number} the data read
@@ -35,7 +32,6 @@ class DataInStream {
     throw new Error("DataInStream.readFloat64");
   }
 
-  /* istanbul ignore next */
   /**
    * Read an unsigned byte.
    * @return {number} the data read
@@ -44,7 +40,6 @@ class DataInStream {
     throw new Error("DataInStream.readUint8");
   }
 
-  /* istanbul ignore next */
   /**
    * Read an unsigned short.
    * @return {number} the data read
@@ -53,7 +48,6 @@ class DataInStream {
     throw new Error("DataInStream.readUint16");
   }
 
-  /* istanbul ignore next */
   /**
    * Read an unsigned int.
    * @return {number} the data read
@@ -62,15 +56,14 @@ class DataInStream {
     throw new Error("DataInStream.readUint32");
   }
 
-  /* istanbul ignore next */
   /**
    * Read an unsigned long.
    * @return {number} the data read
    */
   readUint64() {
+    throw new Error("DataInStream.readUint64");
   }
 
-  /* istanbul ignore next */
   /**
    * Read a known number of bytes.
    * @param {number} length number of bytes to read
@@ -80,7 +73,6 @@ class DataInStream {
     throw new Error(`DataInStream.readUint8Array(${length})`);
   }
 
-  /* istanbul ignore next */
   /**
    * Peek at the next byte on the input stream.
    * @return {Uint8} the next byte, without reading it
@@ -89,7 +81,6 @@ class DataInStream {
     throw new Error("DataInStream.peekUint8");
   }
 
-  /* istanbul ignore next */
   /**
    * Like mark(), reset()
    */
@@ -97,7 +88,6 @@ class DataInStream {
     throw new Error("DataInStream.get mark");
   }
 
-  /* istanbul ignore next */
   /**
    * Like mark(), reset()
    */

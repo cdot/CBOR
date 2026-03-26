@@ -8,7 +8,6 @@
  */
 class DataOutStream {
 
-  /* istanbul ignore next */
   /**
    * Write an unsigned byte.
    * @param {number} value number to write
@@ -17,7 +16,6 @@ class DataOutStream {
     throw new Error(`DataStream.writeUint8(${value}`);
   }
 
-  /* istanbul ignore next */
   /**
    * Write an unsigned short.
    * @param {number} value number to write
@@ -26,7 +24,6 @@ class DataOutStream {
     throw new Error(`DataStream.writeUint16(${value})`);
   }
 
-  /* istanbul ignore next */
   /**
    * Write an unsigned int.
    * @param {number} value number to write
@@ -35,7 +32,6 @@ class DataOutStream {
     throw new Error(`DataStream.writeUint32(${value})`);
   }
 
-  /* istanbul ignore next */
   /**
    * Write an unsigned long.
    * @param {number} value number to write
@@ -44,7 +40,6 @@ class DataOutStream {
     throw new Error(`DataStream.writeUint64${value}`);
   }
 
-  /* istanbul ignore next */
   /**
    * Write a float.
    * @param {number} value number to write
@@ -53,7 +48,6 @@ class DataOutStream {
     throw new Error(`DataStream.writeFloat32${value}`);
   }
 
-  /* istanbul ignore next */
   /**
    * Write a long float.
    * @param {number} value number to write
@@ -62,7 +56,6 @@ class DataOutStream {
     throw new Error(`DataStream.writeFloat64${value}`);
   }
 
-  /* istanbul ignore next */
   /**
    * Write an unsigned byte array.
    * @param {TypedArray} value byte array to write

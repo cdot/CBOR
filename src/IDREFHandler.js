@@ -108,15 +108,12 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
       // remember the ID for the following object (which will
       // be created by one of createArray or createObject)
       this.currentID = id = decoder.decodeItem();
-      /* istanbul ignore if */
       decoder.debug("\tIDREF: ID=", id);
       return decoder.decodeItem();
 
     case CBOR_REF:
       ref = decoder.decodeItem();
-      /* istanbul ignore if */
       decoder.debug("\tIDREF: REF to", ref);
-      /* istanbul ignore if */
       if (!this.objectsThawed[ref])
         throw new Error(`Reference to unthawed ${ref}`);
       return this.objectsThawed[ref];
@@ -134,7 +131,6 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
     const ret = super.createArray(decoder);
     if (typeof this.currentID !== "undefined") {
       this.objectsThawed[this.currentID] = ret;
-      /* istanbul ignore if */
       decoder.debug("\tIDREF: created []", this.currentID);
       this.currentID = undefined;
     }
@@ -150,7 +146,6 @@ const IDREFHandler = superclass => class IDREFHandler extends superclass {
     const ret = super.createObject(decoder, proto);
     if (typeof this.currentID !== "undefined") {
       this.objectsThawed[this.currentID] = ret;
-      /* istanbul ignore if */
       decoder.debug("\tIDREF: created {}", this.currentID);
       this.currentID = undefined;
     }

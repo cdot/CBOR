@@ -614,4 +614,17 @@ describe("CBOR Encode/Decode - no tags", () => {
     let thawed = Decoder.decode(frozen);
     assert.deepEqual(thawed, simple);
   });
+
+  it("function", () => {
+
+    let simple = {
+      func: () => {}
+    };
+
+    try {
+      Encoder.encode(simple);
+    } catch(e) {
+      assert.equal(e, "Error: Can't CBOR function");
+    }
+  });
 });

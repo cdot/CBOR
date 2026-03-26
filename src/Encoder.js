@@ -142,7 +142,6 @@ class Encoder {
       }
       return;
 
-      /* istanbul ignore next */
     case "function":
       throw new Error("Can't CBOR function");
     }

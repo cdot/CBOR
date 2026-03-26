@@ -38,7 +38,6 @@ class MemoryInStream extends DataInStream {
 
     else {
       // TypedArray, but node.js doesn't define it so can't use instanceof
-      /* istanbul ignore if */
       if (!(data.buffer
             && typeof data.byteLength === "number"
             && typeof data.byteOffset == "number")) {

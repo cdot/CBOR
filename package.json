@@ -50,7 +50,7 @@
 		"doc": "jsdoc --verbose -R README.md -c jsdoc_config.json -r -d doc src -t node_modules/docdash",
 		"lint": "eslint --format unix src",
 		"test": "mocha test",
-		"coverage": "NODE_ENV=test c8 mocha test",
+		"coverage": "NODE_ENV=test c8 --reporter=html --reporter text npm run test",
 		"update": "ncu -u "
 	}
 }
