@@ -109,4 +109,55 @@ describe("node.js only", () => {
       assert.equal(data[1].name,"Class");
     });
   });
+
+  it("read 1.0.0", () => {
+    // Simple test because the only major gotcha is the inline
+    // key dictionary for KDH
+    const expected = {
+      Aardvaark: { Aardvaark: 'a', Budgerigar: 'b', Crocodile: 'c' },
+      Budgerigar: { Aardvaark: 'A', Budgerigar: 'B', Crocodile: 'C' },
+      Crocodile: {
+        Aardvaark: 'v',
+        Budgerigar: 'r',
+        Crocodile: [
+          {
+            Aardvaark: {
+              Aardvaark: "a",
+              Budgerigar: "b",
+              "Crocodile": "c"
+            }
+          },
+          {
+            Budgerigar: {
+              Aardvaark: "a",
+              Budgerigar: "b",
+              Crocodile: "c"
+            }
+          },
+          {
+            Crocodile: {
+              Aardvaark: "a",
+              Budgerigar: "b",
+              Crocodile: "c"
+            },
+            Aardvaark: "A"
+          }
+        ]
+      }
+    };
+    if (untestable)
+      return undefined;
+    const handler = new (KeyDictionaryHandler(
+      TagHandler))({
+        keys: [ "Aardvaark" ],
+        skipMissingProtos: true
+      });
+    const fn = Path.resolve(__dirname, "1.0.0.data");
+    return Fs.readFile(fn)
+    .then(data => Decoder.decode(data.buffer, handler, console.debug))
+    .then(data => {
+      //console.log(JSON.stringify(data, null, " "));
+      assert.deepEqual(data, expected);
+    });
+  });
 });
